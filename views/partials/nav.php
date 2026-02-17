@@ -1,29 +1,162 @@
 <?php
 $config = require __DIR__ . '/../../config/config.php';
+$user = $_SESSION['user'] ?? null;
+$agencyName = $user['agency_name'] ?? null;
 ?>
-<header class="bg-white shadow">
-    <div class="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-            <div class="h-10 w-10 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold">SW</div>
-            <div>
-                <p class="text-lg font-semibold">SanaWell Product Delivery</p>
-                <p class="text-xs text-gray-500">SaaS Delivery Management</p>
-            </div>
-        </div>
-        <nav class="space-x-4 text-sm">
-            <?php if ($user): ?>
-                <a class="text-gray-600 hover:text-blue-600" href="index.php?route=dashboard">Dashboard</a>
-                <?php if (Auth::hasRole($config['roles']['SUPER_ADMIN'])): ?>
-                    <a class="text-gray-600 hover:text-blue-600" href="index.php?route=agencies">Agencies</a>
-                <?php endif; ?>
-                <?php if (Auth::hasRole($config['roles']['AGENCY_ADMIN'])): ?>
-                    <a class="text-gray-600 hover:text-blue-600" href="index.php?route=users">Users</a>
-                    <a class="text-gray-600 hover:text-blue-600" href="index.php?route=products">Products</a>
-                <?php endif; ?>
-                <a class="text-gray-600 hover:text-blue-600" href="index.php?route=logout">Logout</a>
-            <?php else: ?>
-                <a class="text-gray-600 hover:text-blue-600" href="index.php?route=login">Login</a>
-            <?php endif; ?>
-        </nav>
+
+<header class="sticky top-0 z-50 bg-gradient-to-br from-blue-500 to-slate-500">
+    <div class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+           <div class="h-9 w-9 rounded-xl 
+            bg-gradient-to-br from-slate-600 via-blue-500 to-slate-600
+            flex items-center justify-center
+            shadow-lg ring-1 ring-white/30">
+    <span class="text-white font-bold text-sm tracking-wide">
+        SW
+    </span>
+</div>
+  
+    <div class="leading-tight">
+      <p class="text-sm font-semibold text-white">
+        SanaWell Product Delivery
+      </p>
+      <p class="text-xs text-white">
+        SaaS Delivery Management
+      </p>
     </div>
+    <?php if ($user): ?>
+    <nav class="ml-auto flex items-center gap-6 text-sm font-medium text-white/90">
+                         
+                    <div class="hidden sm:flex flex-col text-right">
+                        <?php if (Auth::hasRole($config['roles']['SUPER_ADMIN']['slug'])): ?>
+                           
+                        <?php else: ?>
+                            <span class="text-sm font-medium text-gray-800">
+                                <?= htmlspecialchars($agencyName) ?>
+                            </span>
+                        <?php endif; ?>
+                        
+                    </div>
+  <div class="max-w-7xl mx-auto px-6 pt-2">
+                    <!-- Navigation -->
+                   <nav class="flex items-center gap-4 text-sm">
+                    <?php if (!empty($_SESSION['agency'])): ?>
+    <span class="inline-flex items-center px-3 py-1 rounded-full
+                   bg-gradient-to-br from-slate-600 via-blue-500 to-slate-600 flex items-center justify-center
+            shadow-lg ring-1 ring-white/30 text-sm font-semibold text-white">
+        <?= htmlspecialchars($_SESSION['agency']['name']) ?>
+    </span>
+<?php endif; ?>
+                       <?php if (Auth::hasRole($config['roles']['DRIVER']['slug'])): ?>
+                        <div class="ml-auto flex items-center gap-6 text-sm font-medium text-white/90">
+    <a href="index.php?route=driver_dashboard"
+       class="text-gray-600 hover:text-blue-600 transition">
+        Dashboard
+    </a>
+<?php else: ?>
+    <a href="index.php?route=dashboard"
+       class="text-white hover:text-blue-600 transition">
+        Dashboard
+    </a>
+<?php endif; ?>
+
+                        <?php if (Auth::hasRole($config['roles']['SUPER_ADMIN']['slug'])): ?>
+                            <a href="index.php?route=agencies"
+                               class="text-white hover:text-blue-600 transition">
+                                Agencies
+                            </a>
+                        <?php endif; ?>
+
+                       <?php if (Auth::hasRole($config['roles']['AGENCY_ADMIN']['slug'])): ?>
+
+    <!-- Users -->
+    <a href="index.php?route=users"
+       class="text-white/90 hover:text-white transition font-medium">
+        Users
+    </a>
+
+    <!-- Customers -->
+    <a href="index.php?route=customers"
+       class="text-white/90 hover:text-white transition font-medium">
+        Customers
+    </a>
+
+   <!-- Settings Dropdown -->
+<div class="relative group">
+    <button
+        class="flex items-center gap-2 text-white/90 hover:text-white transition font-medium">
+
+        <!-- Refined Gear Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-5 h-5 transition-transform duration-300 group-hover:rotate-90"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor"
+             stroke-width="1.5">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M10.325 4.317a1.724 1.724 0 013.35 0 1.724 1.724 0 002.573 1.066 1.724 1.724 0 012.367.997 1.724 1.724 0 00.792 2.276 1.724 1.724 0 010 3.052 1.724 1.724 0 00-.792 2.276 1.724 1.724 0 01-2.367.997 1.724 1.724 0 00-2.573 1.066 1.724 1.724 0 01-3.35 0 1.724 1.724 0 00-2.573-1.066 1.724 1.724 0 01-2.367-.997 1.724 1.724 0 00-.792-2.276 1.724 1.724 0 010-3.052 1.724 1.724 0 00.792-2.276 1.724 1.724 0 012.367-.997 1.724 1.724 0 002.573-1.066z" />
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 9a3 3 0 100 6 3 3 0 000-6z" />
+        </svg>
+
+        <span>Settings</span>
+
+        <!-- Arrow -->
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-4 h-4 transition-transform duration-200 group-hover:rotate-180"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor"
+             stroke-width="2">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M19 9l-7 7-7-7" />
+        </svg>
+    </button>
+
+    <!-- Dropdown -->
+    <div class="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-xl
+                opacity-0 invisible group-hover:opacity-100
+                group-hover:visible transition-all duration-200 z-50">
+
+        <a href="index.php?route=products"
+           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-xl">
+            Products
+        </a>
+
+        <a href="index.php?route=customer_categories"
+           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+            Categories
+        </a>
+
+        <a href="index.php?route=routes"
+           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-xl">
+            Routes
+        </a>
+
+    </div>
+</div>
+ <?php endif; ?>
+
+                        <!-- Divider -->
+                        <span class="h-5 w-px bg-gray-300"></span>
+
+                        <!-- Logout -->
+                        <a href="index.php?route=logout"
+       class="px-3 py-1.5 rounded-lg 
+              bg-white/10 hover:bg-white/20 
+              text-white transition">
+        Logout
+    </a>
+
+                    </nav>
+                </div>
+                        
+            <?php endif; ?>
+
+        </div>
+    </div>
+                        
 </header>

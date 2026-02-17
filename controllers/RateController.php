@@ -1,15 +1,13 @@
 <?php
+
 class RateController extends BaseController
 {
     public function edit(): void
     {
-        if (!Auth::hasRole($this->config['roles']['AGENCY_ADMIN'])) {
-            http_response_code(403);
-            echo 'Unauthorized';
-            return;
-        }
+        Auth::requireAgencyAdmin();
 
-        $productId = (int) ($_GET['product_id'] ?? 0);
+        $productId = (int)($_GET['product_id'] ?? 0);
+
         $rateModel = new ProductRate();
         $rates = $rateModel->allByProduct($productId);
 
@@ -27,30 +25,29 @@ class RateController extends BaseController
 
     public function update(): void
     {
-        if (!Auth::hasRole($this->config['roles']['AGENCY_ADMIN'])) {
-            http_response_code(403);
-            echo 'Unauthorized';
-            return;
-        }
+        Auth::requireAgencyAdmin();
 
         if (!Csrf::verify($_POST['_csrf_token'] ?? null)) {
             http_response_code(403);
-            echo 'Invalid CSRF token.';
+            echo 'Invalid CSRF token';
             return;
         }
 
-        $rateModel = new ProductRate();
-        $productId = (int) ($_POST['product_id'] ?? 0);
+        $productId = (int)($_POST['product_id'] ?? 0);
         $rates = $_POST['rates'] ?? [];
+
+        $rateModel = new ProductRate();
 
         foreach ($rates as $userTypeId => $rate) {
             $rateModel->upsert([
                 'product_id' => $productId,
-                'user_type_id' => (int) $userTypeId,
-                'rate' => (float) $rate,
+                'user_type_id' => (int)$userTypeId,
+                'rate' => (float)$rate,
             ]);
         }
 
-        $this->redirect('index.php?route=product_rates&product_id=' . $productId);
+        $this->redirect(
+            'index.php?route=product_rates&product_id=' . $productId
+        );
     }
 }

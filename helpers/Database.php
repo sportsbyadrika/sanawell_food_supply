@@ -1,26 +1,27 @@
 <?php
+
 class Database
 {
-    private static ?PDO $connection = null;
+    private static $conn;
 
-    public static function connection(): PDO
+    public static function connection()
     {
-        if (self::$connection === null) {
+        if (!self::$conn) {
             $config = require __DIR__ . '/../config/database.php';
-            $dsn = sprintf(
-                'mysql:host=%s;port=%s;dbname=%s;charset=%s',
-                $config['host'],
-                $config['port'],
-                $config['database'],
-                $config['charset']
-            );
 
-            self::$connection = new PDO($dsn, $config['username'], $config['password'], [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            ]);
+            $dsn = "mysql:host={$config['host']};port={$config['port']};dbname={$config['database']};charset={$config['charset']}";
+
+            self::$conn = new PDO(
+                $dsn,
+                $config['username'],
+                $config['password'],
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+                ]
+            );
         }
 
-        return self::$connection;
+        return self::$conn;
     }
 }
