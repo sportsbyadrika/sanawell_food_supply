@@ -1,9 +1,12 @@
 <div class="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 py-10">
 
     <div class="max-w-7xl mx-auto px-6">
-
+        
         <!-- Page Title -->
         <div class="mb-8">
+            <div id="toast-container"
+     class="fixed top-6 right-6 space-y-4 z-50">
+</div>
             <h1 class="text-2xl font-bold text-gray-800">
                 Staff Management
             </h1>
@@ -11,6 +14,28 @@
                 Manage your agency staff and delivery drivers
             </p>
         </div>
+
+     <?php if (!empty($_SESSION['flash_success'])): ?>
+<script>
+window.addEventListener("DOMContentLoaded", function () {
+    showToast("<?= htmlspecialchars($_SESSION['flash_success']) ?>", "success");
+});
+</script>
+<?php unset($_SESSION['flash_success']); ?>
+<?php endif; ?>
+
+<?php if (!empty($_SESSION['flash_temp_password'])): ?>
+<script>
+window.addEventListener("DOMContentLoaded", function () {
+    showToast(
+        "Temporary Password: <?= htmlspecialchars($_SESSION['flash_temp_password']) ?>",
+        "warning",
+        10000 
+    );
+});
+</script>
+<?php unset($_SESSION['flash_temp_password']); ?>
+<?php endif; ?>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
@@ -157,5 +182,45 @@
         </div>
 
     </div>
+   <script>
+function showToast(message, type = "success", duration = 3000) {
 
+    const container = document.getElementById("toast-container");
+    const toast = document.createElement("div");
+
+    let bgColor = "";
+    if (type === "success") bgColor = "bg-green-500";
+    if (type === "error") bgColor = "bg-red-500";
+    if (type === "warning") bgColor = "bg-yellow-500";
+
+    toast.className = `
+        ${bgColor}
+        text-white px-6 py-4 rounded-2xl shadow-lg
+        transform transition-all duration-500
+        translate-x-10 opacity-0
+    `;
+
+    toast.innerHTML = `
+        <div class="flex justify-between items-center gap-4">
+            <span class="font-semibold">${message}</span>
+            <button onclick="this.parentElement.parentElement.remove()" class="font-bold text-lg">×</button>
+        </div>
+    `;
+
+    container.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.classList.remove("translate-x-10", "opacity-0");
+    }, 100);
+
+    // Auto remove only if duration > 0
+    if (duration > 0) {
+        setTimeout(() => {
+            toast.classList.add("opacity-0", "translate-x-10");
+            setTimeout(() => toast.remove(), 500);
+        }, duration);
+    }
+}
+</script>
 </div>

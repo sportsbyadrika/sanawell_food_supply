@@ -103,6 +103,11 @@ $userModel->create([
     $this->sendStaffInviteEmail($email, $tempPassword);
 
     $_SESSION['flash_success'] = 'User created successfully. Login credentials have been sent.';
+    $config = require __DIR__ . '/../config/config.php';
+
+if ($config['environment'] === 'local') {
+    $_SESSION['flash_temp_password'] = $tempPassword;
+}
     $this->redirect('index.php?route=users');
     return;
 }
@@ -131,8 +136,11 @@ SanaWell Team
 
     mail($email, $subject, $message, $headers);
 
-    // Backup for local testing
-    error_log("STAFF LOGIN → {$email} | {$tempPassword}");
+            
+$config = require __DIR__ . '/../config/config.php';
+  if ($config['environment'] === 'local') {
+    $_SESSION['dev_temp_password'] = $tempPassword;
+}
 }
 
 public function edit()

@@ -3,21 +3,22 @@ class AuthController extends BaseController
 {
     public function showLogin(): void
     {
-        $this->render('auth/login', [
-            'title' => 'Login',
-            'csrf_token' => Csrf::token(),
-        ]);
+       $this->render('auth/login', [
+    'title' => 'Login',
+    'csrf_token' => Csrf::token(),
+],null);
     }
 
-    public function login(): void
-    {
-         if (!Csrf::verify($_POST['_csrf_token'] ?? null)) {
+   public function login(): void
+{
+    
+    if (!Csrf::verify($_POST['_csrf_token'] ?? null)) {
         http_response_code(403);
         echo 'Invalid CSRF token.';
         return;
     }
 
-    $email    = trim($_POST['email'] ?? '');
+    $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
     $userModel = new User();
@@ -41,46 +42,54 @@ class AuthController extends BaseController
         return;
     }
 
+    $agency = null;
+
+    if (!empty($user['agency_id'])) {
+        $agencyModel = new Agency();
+        $agency = $agencyModel->findById($user['agency_id']);
+
+        if (!$agency || $agency['status'] !== 'active') {
+            $this->render('auth/login', [
+                'title' => 'Login',
+                'error' => 'Your agency is inactive. Contact Super Admin.',
+                'csrf_token' => Csrf::token(),
+            ]);
+            return;
+        }
+    }
+
+    $userModel->updateLastLogin($user['id']);
 
     Auth::login($user);
+
     $_SESSION['user'] = [
-    'id'        => $user['id'],
-    'role_id'   => $user['role_id'],
-    'agency_id' => $user['agency_id'],
-    'email'     => $user['email'],
-];
-
-  if (!empty($user['agency_id'])) {
-    $agencyModel = new Agency();
-    $agency = $agencyModel->findById($user['agency_id']);
-
-    $_SESSION['agency'] = [
-        'id'   => $agency['id'],
-        'name' => $agency['name'],
+        'id'        => $user['id'],
+        'role_id'   => $user['role_id'],
+        'agency_id' => $user['agency_id'],
+        'email'     => $user['email'],
     ];
-} else {
-    $_SESSION['agency'] = null; // Super Admin
+
+    $_SESSION['agency'] = $agency ?? null;
+
+    
+    $superAdminRoleId = $this->config['roles']['SUPER_ADMIN']['id'];
+
+    if (
+        (int)$user['first_login'] === 1 &&
+        (int)$user['role_id'] !== (int)$superAdminRoleId
+    ) {
+        $this->redirect('index.php?route=change_password');
+        return;
+    }
+
+    if ((int)$user['role_id'] === (int)$this->config['roles']['DRIVER']['id']) {
+        $this->redirect('index.php?route=driver_dashboard');
+        return;
+    }
+
+    $this->redirect('index.php?route=dashboard');
 }
 
-$superAdminRoleId = $this->config['roles']['SUPER_ADMIN']['id'];
-
-if (
-    (int)$user['first_login'] === 1 &&
-    (int)$user['role_id'] !== (int)$superAdminRoleId
-) {
-    $this->redirect('index.php?route=change_password');
-    return;
-}
-
-if ((int)$user['role_id'] === $this->config['roles']['DRIVER']['id']) {
-    $this->redirect('index.php?route=driver_dashboard');
-    return;
-}
-
-// Super Admin & Agency Admin
-$this->redirect('index.php?route=dashboard');
-
-}
 public function changePassword(): void
 {
     

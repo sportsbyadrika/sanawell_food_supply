@@ -71,4 +71,19 @@ public static function requireAgencyAdmin(): void
         exit;
     }
 }
+
+public static function requireDriver(): void
+{
+    if (!isset($_SESSION['user'])) {
+        header("Location: index.php?route=login");
+        exit;
+    }
+
+    $config = require __DIR__ . '/../config/config.php';
+
+    if ($_SESSION['user']['role_id'] != $config['roles']['DRIVER']['id']) {
+        header("Location: index.php?route=login");
+        exit;
+    }
+}
 }

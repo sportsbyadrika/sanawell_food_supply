@@ -48,7 +48,19 @@
                           rows="3"
                           class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"><?= htmlspecialchars($route['description']) ?></textarea>
             </div>
+            <div class="mb-5">
+<label  class="block text-sm font-medium text-gray-700">Driver</label>
+<select name="driver_id" class="mt-1 w-full border rounded-lg px-3 py-2">
+    <option value="">Not Assigned</option>
 
+    <?php foreach ($drivers as $driver): ?>
+        <option value="<?= $driver['id'] ?>"
+            <?= $route['driver_id'] == $driver['id'] ? 'selected' : '' ?>>
+            <?= htmlspecialchars($driver['name']) ?>
+        </option>
+    <?php endforeach; ?>
+</select>
+    </div>
             <div class="flex justify-between items-center">
                 <a href="index.php?route=routes"
                    class="px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">

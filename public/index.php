@@ -33,12 +33,15 @@ $routes = [
 'reset_password' => [AuthController::class, 'resetPasswordForm'],
 'reset_password_submit' => [AuthController::class, 'resetPassword'],
 
-    'dashboard' => [DashboardController::class, 'index'],
-    'driver_dashboard' => [DriverDashboardController::class, 'index'],
+   
+
     'agencies' => [AgencyController::class, 'index'],
     'agencies_store' => [AgencyController::class, 'store'],
     'agencies_status' => [AgencyController::class, 'updateStatus'],
+    'tenant_admin_reset' => [AgencyController::class, 'resetAdminPassword'],
     'agency_users' => [AgencyController::class, 'users'],
+    'agencies_create' => [AgencyController::class, 'create'],
+    
     'users' => [UserController::class, 'index'],
     'users_store' => [UserController::class, 'store'],
        'users_edit'   => [UserController::class, 'edit'],
@@ -50,6 +53,12 @@ $routes = [
     'products_edit' => [ProductController::class, 'edit'],
     'products_update' => [ProductController::class, 'update'],
 
+    'dashboard' => [DashboardController::class, 'index'],
+    // DRIVER
+'driver_dashboard' => [DriverDashboardController::class, 'index'],
+'driver_start_delivery'=>[ DriverDeliveryController::class,'start'],
+'driver_delivery'=>[ DriverDeliveryController::class,'view'],
+
     'product_rates' => [ProductRateController::class, 'manage'],
     'product_rate_store' => [ProductRateController::class, 'store'],
     'customers' => [CustomerController::class, 'index'],
@@ -59,24 +68,38 @@ $routes = [
 'customers_update' => [CustomerController::class, 'update'],
 'customers_toggle' => [CustomerController::class, 'toggle'],
  'customers_search' => [CustomerController::class, 'search'],
-    
+ 'customer_product_toggle'=>[CustomerController::class,'toggleProduct'],
+ 'customer_product_update'=>[CustomerController::class,'updateProduct'],
+    'get_product_rate'=>[CustomerController::class,'getProductRate'],
+    'agency_customers_import' => [CustomerController::class, 'import'],
+'agency_customers_import_process' => [CustomerController::class, 'importProcess'],
     'customer_categories' => [CustomerCategoryController::class, 'index'],
     'customer_categories_store' => [CustomerCategoryController::class, 'store'],
      'customer_categories_edit' => [CustomerCategoryController::class, 'edit'],
       'customer_categories_update' => [CustomerCategoryController::class, 'update'],
+      'customer_manage' => [CustomerController::class, 'manage'],
+'customer_product_store' => [CustomerController::class, 'storeProduct'],
+'customer_product_delete' => [CustomerController::class, 'deleteProduct'],
     'customer_categories_toggle' => [CustomerCategoryController::class, 'toggle'],
 
-    'product_rates' => [RateController::class, 'edit'],
-    'product_rates_update' => [RateController::class, 'update'],
+    'product_rates' => [RateController::class, 'manage'],
+    'rate_store' => [RateController::class, 'store'],
 
     'routes' => [RouteController::class, 'index'],
 'routes_store' => [RouteController::class, 'store'],
 'routes_edit' => [RouteController::class, 'edit'],
 'routes_update' => [RouteController::class, 'update'],
 'routes_toggle' => [RouteController::class, 'toggle'],
+'route_configuration' => [RouteConfigurationController::class, 'index'],
+'route_configuration_manage' => [RouteConfigurationController::class, 'manage'],
+'route_order_update' => [RouteConfigurationController::class, 'updateRouteOrder'],
+'generate_delivery' => [RouteConfigurationController::class, 'generateDelivery'],
+'today_delivery_view' => [RouteConfigurationController::class, 'todayDeliveryView'],
+'mark_delivered' => [DriverDeliveryController::class, 'markDelivered'],
 
-'route_assign' => [RouteCustomerController::class, 'assignPage'],
-'route_assign_store' => [RouteCustomerController::class, 'store'],
+'delivery_report' => [ReportController::class, 'deliveryreport'],
+'generate_monthly_bill'=>[ReportController::class,'generateMonthlyBill'],
+
 ];
 
 if ($route === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {

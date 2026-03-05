@@ -8,17 +8,23 @@ class CustomerCategory
     {
         $this->db = Database::connection();
     }
+public function allByAgency(int $agencyId): array
+{
+    $stmt = $this->db->prepare("
+        SELECT 
+            cc.*,
+            COUNT(c.id) AS customer_count
+        FROM customer_categories cc
+        LEFT JOIN customers c 
+            ON c.category_id = cc.id  
+        WHERE cc.agency_id = :aid
+        GROUP BY cc.id
+        ORDER BY cc.name
+    ");
 
-    public function allByAgency(int $agencyId): array
-    {
-        $stmt = $this->db->prepare(
-            "SELECT * FROM customer_categories 
-             WHERE agency_id = :aid 
-             ORDER BY name"
-        );
-        $stmt->execute(['aid' => $agencyId]);
-        return $stmt->fetchAll();
-    }
+    $stmt->execute(['aid' => $agencyId]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
    public function create(array $data): bool
 {

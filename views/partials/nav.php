@@ -50,7 +50,7 @@ $agencyName = $user['agency_name'] ?? null;
                        <?php if (Auth::hasRole($config['roles']['DRIVER']['slug'])): ?>
                         <div class="ml-auto flex items-center gap-6 text-sm font-medium text-white/90">
     <a href="index.php?route=driver_dashboard"
-       class="text-gray-600 hover:text-blue-600 transition">
+       class="text-white hover:text-blue-600 transition">
         Dashboard
     </a>
 <?php else: ?>
@@ -70,16 +70,46 @@ $agencyName = $user['agency_name'] ?? null;
                        <?php if (Auth::hasRole($config['roles']['AGENCY_ADMIN']['slug'])): ?>
 
     <!-- Users -->
-    <a href="index.php?route=users"
-       class="text-white/90 hover:text-white transition font-medium">
-        Users
-    </a>
+   
 
     <!-- Customers -->
-    <a href="index.php?route=customers"
-       class="text-white/90 hover:text-white transition font-medium">
-        Customers
-    </a>
+   <div class="relative group">
+    <button
+        class="flex items-center gap-2 text-white/90 hover:text-white transition font-medium">
+
+
+        <span>Customers</span>
+
+        <!-- Arrow -->
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-4 h-4 transition-transform duration-200 group-hover:rotate-180"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor"
+             stroke-width="2">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M19 9l-7 7-7-7" />
+        </svg>
+    </button>
+
+    <!-- Dropdown -->
+    <div class="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-xl
+                opacity-0 invisible group-hover:opacity-100
+                group-hover:visible transition-all duration-200 z-50">
+
+        <a href="index.php?route=customers"
+           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-xl">
+            Customer List
+        </a>
+
+        <a href="index.php?route=route_configuration"
+           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+            Route Configuration
+        </a>
+
+       </div>
+</div>
 
    <!-- Settings Dropdown -->
 <div class="relative group">
@@ -135,10 +165,21 @@ $agencyName = $user['agency_name'] ?? null;
            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-xl">
             Routes
         </a>
+         <a href="index.php?route=users"
+       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-xl">
+        Users
+    </a>
 
     </div>
+  
 </div>
  <?php endif; ?>
+  <div>
+     <a href="index.php?route=delivery_report"
+   class="px-3 py-2 rounded-md hover:bg-white/20 transition">
+   Reports
+</a>
+                       </div>
 
                         <!-- Divider -->
                         <span class="h-5 w-px bg-gray-300"></span>

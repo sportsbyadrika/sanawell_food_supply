@@ -26,7 +26,7 @@
         <th class="px-4 py-3 text-left">Image</th>
         <th class="px-4 py-3 text-left">Name</th>
         <th class="px-4 py-3 text-left">Description</th>
-        <th class="px-4 py-3 text-left">Product Type</th>
+         <th class="px-4 py-3 text-left">Product Type</th>
         <th class="px-4 py-3 text-left">Rates</th>
         <th class="px-4 py-3 text-left">Actions</th>
     </tr>
@@ -52,9 +52,12 @@
                         <td class="px-4 py-3 text-slate-600">
                             <?= htmlspecialchars($product['description']) ?>
                         </td>
-                        <td class="px-4 py-3 text-slate-600" ><?= htmlspecialchars($product['variant']) ?></td>
+                         <td class="px-4 py-3 text-slate-600">
+                            <?= htmlspecialchars($product['variant']) ?>
+                        </td>
+                        
                         <td class="px-4 py-3">
-                            <a href="index.php?route=product_rates&id=<?= $product['id'] ?>"
+                           <a href="index.php?route=product_rates&id=<?= $product['id'] ?>"
                                class="text-blue-600 hover:underline font-medium">
                                 Manage Rates
                             </a>

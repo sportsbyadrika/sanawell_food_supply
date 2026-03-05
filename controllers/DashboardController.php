@@ -8,9 +8,9 @@ class DashboardController extends BaseController
             $this->redirect('index.php?route=login');
         }
        
-      $roleId = (int) $user['role_id'];   // ✅ assignment FIRST
+      $roleId = (int) $user['role_id'];   
 
-switch ($roleId) {                 // ✅ variable inside ()
+switch ($roleId) {                 
 
     case $this->config['roles']['SUPER_ADMIN']['id']:
         $agencyModel = new Agency();

@@ -7,7 +7,7 @@
             <!-- Customer Type -->
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Customer Type
+                    Customer Categories
                 </label>
                 <input 
                     type="text" 
@@ -35,7 +35,7 @@
             <div>
                  <button type="submit"
                    class="bg-gradient-to-br from-blue-500 to-slate-500  text-white px-4 py-2 rounded-lg">
-                Add Type
+                Add Category
             </button>
             </div>
 
@@ -55,6 +55,7 @@
                     <th class="px-4 py-3 text-left">Description</th>
                     <th class="px-4 py-3 text-left">Status</th>
                     <th class="px-4 py-3 text-left">Actions</th>
+                    <th class="px-4 py-3 text-left">Customers</th>
                     <th></th>
                 </tr>
             </thead>
@@ -85,6 +86,7 @@
 </a>
     </div>
 </td>
+<td class="px-4 py-3"><?= $c['customer_count'] ?></td>
 
                     
                 </tr>

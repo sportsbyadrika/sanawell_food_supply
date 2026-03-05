@@ -1,53 +1,41 @@
 <?php
 
-class RateController extends BaseController
-{
-    public function edit(): void
-    {
-        Auth::requireAgencyAdmin();
 
-        $productId = (int)($_GET['product_id'] ?? 0);
+class RateController extends BaseController {
 
-        $rateModel = new ProductRate();
-        $rates = $rateModel->allByProduct($productId);
+    private $model;
 
-        $userTypeModel = new UserType();
-        $userTypes = $userTypeModel->all();
-
-        $this->render('agency/product_rates', [
-            'title' => 'Product Rates',
-            'rates' => $rates,
-            'userTypes' => $userTypes,
-            'productId' => $productId,
-            'csrf_token' => Csrf::token(),
-        ]);
+    public function __construct() {
+         parent::__construct();   
+        $this->model = new RateModel();
     }
 
-    public function update(): void
-    {
-        Auth::requireAgencyAdmin();
+    // Manage rates page
+   public function manage()
+{
+    $product_id = $_GET['id'];
 
-        if (!Csrf::verify($_POST['_csrf_token'] ?? null)) {
-            http_response_code(403);
-            echo 'Invalid CSRF token';
-            return;
-        }
+    $rateModel = new RateModel();
+    $productModel = new Product();
 
-        $productId = (int)($_POST['product_id'] ?? 0);
-        $rates = $_POST['rates'] ?? [];
+    $product = $productModel->find($product_id); // get product details
+    $rates = $rateModel->getByProduct($product_id);
+    $customerTypes = $rateModel->getCustomerTypes();
 
-        $rateModel = new ProductRate();
+    $this->render('agency/rates/manage', [
+        'product'       => $product,
+        'product_id'    => $product_id,
+        'rates'         => $rates,
+        'customerTypes' => $customerTypes
+    ]);
+}
 
-        foreach ($rates as $userTypeId => $rate) {
-            $rateModel->upsert([
-                'product_id' => $productId,
-                'user_type_id' => (int)$userTypeId,
-                'rate' => (float)$rate,
-            ]);
-        }
+    // Store new rate
+    public function store() {
 
-        $this->redirect(
-            'index.php?route=product_rates&product_id=' . $productId
-        );
+        $this->model->create($_POST);
+
+        header("Location: index.php?route=product_rates&id=" . $_POST['product_id']);
+        exit;
     }
 }

@@ -2,22 +2,47 @@
 class AgencyController extends BaseController
 {
     public function index(): void
-    {
-        if (!Auth::hasRole($this->config['roles']['SUPER_ADMIN']['slug'])) {
-            http_response_code(403);
-            echo 'Unauthorized';
-            return;
-        }
+{
+    if (!Auth::hasRole($this->config['roles']['SUPER_ADMIN']['slug'])) {
+        http_response_code(403);
+        echo "Unauthorized";
+        return;
+    }
 
-        $agencyModel = new Agency();
-        $agencies = $agencyModel->getAll();
+    $agencyModel = new Agency();
 
-        $this->render('superadmin/agencies', [
-            'title' => 'Manage Agencies',
-            'agencies' => $agencies,
-            'csrf_token' => Csrf::token(),
-        ]);
-       
+    $agencyAdminRoleId = $this->config['roles']['AGENCY_ADMIN']['id'];
+
+    $type   = $_GET['type'] ?? null;
+    $status = $_GET['status'] ?? null;
+    $from   = $_GET['from_date'] ?? null;
+    $to     = $_GET['to_date'] ?? null;
+
+    if ($type === 'active') {
+        $status = 'active';
+    } elseif ($type === 'pending') {
+        $status = 'pending';
+    }
+
+    if ($status || $from || $to) {
+        $agencies = $agencyModel->filter($status, $from, $to, $agencyAdminRoleId);
+    } else {
+        $agencies = $agencyModel->getAll($agencyAdminRoleId);
+    }
+
+    $this->render('superadmin/agencies', [
+        'title'      => 'Manage Agencies',
+        'agencies'   => $agencies,
+        'csrf_token' => Csrf::token(),
+    ]);
+}
+
+public function create()
+{
+    $this->render('superadmin/agency_create', [
+        'title' => 'Add New Agency',
+        'csrf_token' => Csrf::token(),
+    ]);
 }
     public function users()
 {
@@ -58,7 +83,7 @@ class AgencyController extends BaseController
             'contact_number' => trim($_POST['contact_number'] ?? ''),
             'contact_email' => trim($_POST['contact_email'] ?? ''),
             'whatsapp_number' => trim($_POST['whatsapp_number'] ?? ''),
-            'status' => 'active',
+            'status' => 'pending',
         ];
 
         $agencyModel = new Agency();
@@ -68,17 +93,17 @@ class AgencyController extends BaseController
         $this->redirect('index.php?route=agencies');
     }
 
-   public function updateStatus(): void
-   {
-   if (!Auth::hasRole($this->config['roles']['SUPER_ADMIN']['slug'])) {
+  public function updateStatus(): void
+{
+    if (!Auth::hasRole($this->config['roles']['SUPER_ADMIN']['slug'])) {
         http_response_code(403);
-        echo 'Unauthorized';
+        echo "Unauthorized";
         return;
     }
 
     if (!Csrf::verify($_POST['_csrf_token'] ?? null)) {
         http_response_code(403);
-        echo 'Invalid CSRF token';
+        echo "Invalid CSRF token";
         return;
     }
 
@@ -87,59 +112,107 @@ class AgencyController extends BaseController
 
     $agencyModel = new Agency();
     $agencyModel->updateStatus($agencyId, $status);
-
-    /* =====================================================
-       ONLY when agency is APPROVED / ACTIVATED
-    ===================================================== */
+     
     if ($status === 'active') {
-          error_log("updateStatus triggered for Agency ID: $agencyId with status: $status");
 
         $agency = $agencyModel->findById($agencyId);
+
         if (!$agency) {
             $this->redirect('index.php?route=agencies');
             return;
         }
 
+        $agencyName   = $agency['name'];
+        $contactEmail = $agency['contact_email'];
+        $mobile       = $agency['contact_number'];
+
         $userModel = new User();
 
-        
-        if (!$userModel->agencyAdminExists($agencyId)) {
+        // Generate temp password
+        $tempPassword = substr(
+            str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789'),
+            0,
+            8
+        );
 
-            $agencyName   = $agency['name'];
-            $contactEmail = $agency['contact_email'];
-          if ($userModel->emailExists($contactEmail)) {
-         $this->redirect('index.php?route=agencies');
-        return;
-         }
-        
-            $tempPassword = substr(str_shuffle(
-                'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-            ), 0, 8);
+        $passwordHash = password_hash($tempPassword, PASSWORD_DEFAULT);
 
-            $passwordHash = password_hash($tempPassword, PASSWORD_DEFAULT);
-            $_SESSION['generated_temp_password'] = $tempPassword;
-            //error_log("Agency Admin Created | Email: {$contactEmail} | Temp Password: {$tempPassword}");
-            die("Temp Password: " . $tempPassword);
-            $userModel->create([
-                'agency_id'     => $agencyId,
-                'role_id'       => $this->config['roles']['AGENCY_ADMIN']['id'],
-                'name'          => $agencyName . ' Admin',
-                'email'         => $contactEmail,
-                'password_hash'=> $passwordHash,
-                'first_login'   => 1,          
-                'status'        => 'active'
-            ]);
+        $userModel->create([
+            'agency_id'     => $agencyId,
+            'role_id'       => $this->config['roles']['AGENCY_ADMIN']['id'],
+            'name'          => $agencyName . ' Admin',
+            'email'         => $contactEmail,
+            'mobile'        => $mobile,
+            'password_hash' => $passwordHash,
+            'first_login'   => 1,
+            'status'        => 'active'
+        ]);
 
-            
-            $this->sendAgencyApprovalEmail(
-                $contactEmail,
-                $tempPassword
-            );
+        // ✅ Show temp password only in local
+        $config = require __DIR__ . '/../config/config.php';
+        if ($config['environment'] === 'local') {
+            $_SESSION['dev_temp_password'] = $tempPassword;
         }
+
+        $this->sendAgencyApprovalEmail($contactEmail, $tempPassword);
     }
 
     $this->redirect('index.php?route=agencies');
 }
+public function resetAdminPassword(): void
+{
+    
+    if (!Auth::hasRole($this->config['roles']['SUPER_ADMIN']['slug'])) {
+        http_response_code(403);
+        echo "Unauthorized";
+        return;
+    }
+
+    if (!Csrf::verify($_POST['_csrf_token'] ?? null)) {
+        http_response_code(403);
+        echo "Invalid CSRF token";
+        return;
+    }
+
+    $agencyId = (int) ($_POST['agency_id'] ?? 0);
+
+    if ($agencyId <= 0) {
+        $this->redirect('index.php?route=agencies');
+        return;
+    }
+
+    $agencyModel = new Agency();
+    $agency = $agencyModel->findById($agencyId);
+
+    if (!$agency) {
+        $this->redirect('index.php?route=agencies');
+        return;
+    }
+
+    $tempPassword = substr(
+        str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ23456789'),
+        0,
+        8
+    );
+
+    $hash = password_hash($tempPassword, PASSWORD_DEFAULT);
+
+    $userModel = new User();
+
+    $userModel->updateAdminPassword($agencyId, $hash);
+
+   
+    $this->sendAgencyApprovalEmail($agency['contact_email'], $tempPassword);
+
+    $config = require __DIR__ . '/../config/config.php';
+    if ($config['environment'] === 'local') {
+        $_SESSION['dev_temp_password'] = $tempPassword;
+    }
+
+    $_SESSION['success'] = "Tenant admin password reset successfully.";
+    $this->redirect('index.php?route=agencies');
+}
+
 private function sendAgencyApprovalEmail(string $email, string $tempPassword): void
 {
     $subject = "Your SanaWell Agency is Approved";

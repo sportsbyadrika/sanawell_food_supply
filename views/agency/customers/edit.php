@@ -1,9 +1,17 @@
-<div class="h-[calc(100vh-120px)] flex items-center justify-center px-6">
-    <div class="w-full max-w-4xl bg-white rounded-2xl shadow-xl p-8">
+<div class="px-6 py-10">
+   <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-8">
+<div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-semibold text-gray-800">
+        ✏️ Edit Customer
+    </h2>
 
-        <h2 class="text-2xl font-bold text-gray-700 mb-6">
-            ✏ Edit Customer
-        </h2>
+    <a href="index.php?route=customer_manage&id=<?= $customer['id']; ?>"
+       class="bg-gradient-to-br from-blue-500 to-slate-500 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition">
+        + Add Product
+    </a>
+
+</div>   
+  
 
         <form method="POST" action="index.php?route=customers_update">
             
@@ -86,6 +94,7 @@
                             <option value="<?= $route['id'] ?>"
                                 <?= $customer['route_id'] == $route['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($route['name']) ?>
+                                (<?= htmlspecialchars($route['type']) ?>)
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -125,6 +134,7 @@
                     class="px-6 py-2 bg-gradient-to-br from-blue-500 to-slate-500 text-white rounded-lg hover:bg-blue-700 shadow-md">
                     Update customer
                 </button>
+                
 
             </div>
 

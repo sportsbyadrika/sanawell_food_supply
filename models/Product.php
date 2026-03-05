@@ -55,4 +55,18 @@ public function update(int $id, array $data): void
         $id
     ]);
 }
+
+public function allActive(): array
+{
+    $stmt = $this->db->prepare("
+        SELECT *
+        FROM products
+        WHERE status = 'active'
+        ORDER BY name ASC
+    ");
+
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 }

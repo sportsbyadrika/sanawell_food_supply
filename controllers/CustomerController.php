@@ -2,13 +2,19 @@
 
 class CustomerController extends BaseController
 {
+
+  private $customerModel;
+
+    public function __construct()
+    {
+        $this->customerModel = new Customer();
+    }
    public function index(): void
 {
     Auth::requireAgencyAdmin();
 
-    $customerModel = new Customer();
-
-    $perPage = 2;
+    $customerModel = $this->customerModel;
+    $perPage = 10;
     $agencyId = Auth::user()['agency_id'];
 
     $name    = $_GET['name'] ?? null;
@@ -21,7 +27,6 @@ class CustomerController extends BaseController
 
     $offset = ($currentPage - 1) * $perPage;
 
-    // ✅ Get paginated data
     $customers = $customerModel->filterByAgencyPaginated(
         $agencyId,
         $name,
@@ -31,7 +36,7 @@ class CustomerController extends BaseController
         $offset
     );
 
-    // ✅ Get total count for pagination
+    
     $totalCustomers = $customerModel->countFiltered(
         $agencyId,
         $name,
@@ -52,7 +57,8 @@ class CustomerController extends BaseController
         'typeId'      => $typeId,
         'routeId'     => $routeId,
         'currentPage' => $currentPage,
-        'totalPages'  => $totalPages
+        'totalPages'  => $totalPages,
+         'perPage' => $perPage
     ]);
 }
 
@@ -88,11 +94,9 @@ public function create(): void
 
     $agencyId = Auth::user()['agency_id'];
 
-    // Load customer types
     $categoryModel = new CustomerCategory();
     $types = $categoryModel->allByAgency($agencyId);
 
-    // Load routes
     $routeModel = new Route();
     $routes = $routeModel->allByAgency($agencyId);
 
@@ -147,6 +151,75 @@ public function update(): void
 
     $this->redirect('index.php?route=customers');
 }
+
+public function manage(): void
+{
+    Auth::requireAgencyAdmin();
+
+    $id = (int)($_GET['id'] ?? 0);
+
+    if (!$id) {
+        $this->redirect('index.php?route=customers');
+    }
+
+    $customerModel = new Customer();
+    $routeModel    = new Route();
+    $productModel  = new Product();
+
+    $customer = $customerModel->find($id);
+
+   $rateModel = new RateModel();
+
+$products = $rateModel->getProductsWithRate($customer['category_id']); 
+   $routes = $routeModel->getAllByAgency($customer['agency_id']);   
+
+    $customer_products = $customerModel->getCustomerProducts($id);
+
+    $this->render('agency/customers/manage', [
+        'customer' => $customer,
+        'products' => $products,
+        'routes'   => $routes,
+        'customer_products' => $customer_products
+    ]);
+}
+
+public function storeProduct(): void
+{
+    Auth::requireAgencyAdmin();
+
+    $customerId = (int)($_POST['customer_id'] ?? 0);
+    $productId  = (int)($_POST['product_id'] ?? 0);
+    $quantity   = (float)($_POST['quantity'] ?? 0);
+    $routeId    = (int)($_POST['route_id'] ?? 0);
+
+    if (!$customerId || !$productId || !$quantity || !$routeId) {
+        $_SESSION['error'] = "All fields are required.";
+        header("Location: index.php?route=customer_manage&id=" . $customerId);
+        exit;
+    }
+
+    $customerModel = new Customer();
+    $rateModel     = new RateModel();
+
+    $customer = $customerModel->find($customerId);
+    $customerTypeId = $customer['category_id'];
+
+    $rate = $rateModel->getCurrentRate($productId, $customerTypeId);
+
+    $total = $rate * $quantity;
+
+    $customerModel->addCustomerProduct(
+        $customerId,
+        $productId,
+        $quantity,
+        $routeId,
+        $rate,
+        $total
+    );
+
+    header("Location: index.php?route=customer_manage&id=" . $customerId);
+    exit;
+}
 public function toggle()
 {
     $id = (int)($_GET['id'] ?? 0);
@@ -171,5 +244,136 @@ public function toggle()
 
     header("Location: index.php?route=customers");
     exit;
+}
+
+public function toggleProduct(): void
+{
+    Auth::requireAgencyAdmin();
+
+    $id = (int)($_GET['id'] ?? 0);
+
+    if (!$id) {
+        header("Location: index.php?route=customers");
+        exit;
+    }
+
+    $customerModel = new Customer();
+
+    $customerModel->toggleCustomerProduct($id);
+
+    header("Location: " . $_SERVER['HTTP_REFERER']);
+    exit;
+}
+
+public function updateProduct(): void
+{
+    Auth::requireAgencyAdmin();
+
+    $id       = (int)($_POST['id'] ?? 0);
+    $quantity = (float)($_POST['quantity'] ?? 0);
+    $routeId  = (int)($_POST['route_id'] ?? 0);
+
+    if (!$id || !$quantity || !$routeId) {
+        header("Location: " . $_SERVER['HTTP_REFERER']);
+        exit;
+    }
+
+    $customerModel = new Customer();
+
+    $productRow = $customerModel->getCustomerProductById($id);
+
+    if (!$productRow) {
+        header("Location: " . $_SERVER['HTTP_REFERER']);
+        exit;
+    }
+
+    $rate = (float)$productRow['rate'];  
+    $total = $rate * $quantity;         
+
+     $customerModel->updateCustomerProduct(
+        $id,
+        $quantity,
+        $routeId,
+        $total
+    );
+
+    header("Location: " . $_SERVER['HTTP_REFERER']);
+    exit;
+}
+
+public function getProductRate()
+{
+    $customer_id = $_GET['customer_id'];
+    $product_id = $_GET['product_id'];
+
+    $customerModel = new CustomerModel();
+    $rateModel = new RateModel();
+
+    $customer = $customerModel->find($customer_id);
+
+    $rate = $rateModel->getCurrentRate(
+        $product_id,
+        $customer['customer_type_id']
+    );
+
+    echo json_encode(['rate' => $rate]);
+}
+
+
+
+public function import(): void
+{
+    Auth::requireAgencyAdmin();
+
+    $this->render('agency/customers/import');
+}
+
+public function importProcess()
+{
+    if(isset($_FILES['csv_file']))
+    {
+
+        $file = $_FILES['csv_file']['tmp_name'];
+
+        $handle = fopen($file,"r");
+
+        fgetcsv($handle); // skip header
+
+        while(($row = fgetcsv($handle,1000,",")) !== FALSE)
+        {
+
+            $name = trim($row[0]);
+            $mobile = trim($row[1]);
+               $address = trim($row[2]);
+            $whatsapp = trim($row[3]);
+            $category = trim($row[4]);
+            $route = trim($row[5]);
+
+            $category_id = $this->customerModel->getCategoryId($category);
+            $route_id = $this->customerModel->getRouteId($route);
+
+            if($category_id && $route_id)
+            {
+                $data = [
+                    'agency_id' => Auth::user()['agency_id'],
+                    'name'=>$name,
+                    'mobile'=>$mobile,
+                    'address'=>$address,
+                    'whatsapp'=>$whatsapp,
+                    'category_id'=>$category_id,
+                    'route_id'=>$route_id
+                ];
+
+                $this->customerModel->insertCustomer($data);
+            }
+
+        }
+
+        fclose($handle);
+
+        header("Location:index.php?route=customers");
+        exit;
+
+    }
 }
 }

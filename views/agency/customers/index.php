@@ -1,3 +1,5 @@
+
+
 <div class="max-w-6xl mx-auto p-6">
 <div class="flex justify-between items-center mb-6">
 <form method="GET" action="index.php">
@@ -40,7 +42,10 @@
     </a>
 </form>
 
-            
+<a href="index.php?route=agency_customers_import"
+class="bg-green-600 text-white px-4 py-2 rounded">
+Import Customers
+</a>  
             
 
  <a href="index.php?route=customers_create"
@@ -61,6 +66,7 @@
         <table class="w-full text-sm">
             <thead class="bg-slate-100 text-slate-700">
                 <tr>
+                     <th class="px-4 py-3 text-left">#</th>
                     <th class="px-4 py-3 text-left">Name</th>
                     <th class="px-4 py-3 text-left">Mobile</th>
                     <th class="px-4 py-3 text-left">Customer Type</th>
@@ -73,8 +79,12 @@
                 </tr>
             </thead>
             <tbody>
+                <?php $i = ($currentPage - 1) * $perPage + 1; ?>
                 <?php foreach ($customers as $customer): ?>
                     <tr class="border-t">
+                        <td class="px-4 py-3 text-gray-500">
+<?= $i++ ?>
+</td>
                         <td class="px-4 py-3 font-medium">
                             <?= htmlspecialchars($customer['name']) ?>
                         </td>
@@ -84,13 +94,13 @@
                         </td>
 
                         <td class="px-4 py-3 font-medium">
-                            <?= htmlspecialchars($customer['category_name']) ?>
+                           <?= htmlspecialchars($customer['category_name'] ?? '') ?>
                         </td>
                         <td class="px-4 py-3 font-medium">
-                            <?= htmlspecialchars($customer['route_name']) ?>
-                        </td>
+                            <?= htmlspecialchars($customer['route_name'] ?? '') ?>
+                           (<?= htmlspecialchars($customer['route_type'] ?? '') ?>)
                        <td class="px-4 py-3 font-medium">
-    <?= htmlspecialchars($customer['whatsapp'] ?? $customer['whatsapp']) ?>
+  <?= htmlspecialchars($customer['whatsapp'] ?? '') ?>
 </td>
 <td class="px-4 py-3 font-medium">
                             <?= htmlspecialchars($customer['latitude']) ?>
@@ -112,11 +122,15 @@
                                 </span>
                             <?php endif; ?>
                         </td>
-                        <td class="px-4 py-3">
+                        <td class="px-4 py-3 flex gap-3 items-center">
     <a href="index.php?route=customers_edit&id=<?= $customer['id'] ?>"
-       class="text-blue-600 font-medium hover:underline mr-3">
+       class="text-red-600 font-medium hover:underline mr-3">
        Edit
     </a>
+    <a href="index.php?route=customer_manage&id=<?= $customer['id'] ?>"
+     class="text-blue-600 font-medium hover:underline mr-3">
+    Product
+</a>
 
     <a href="index.php?route=customers_toggle&id=<?= $customer['id'] ?>"
        class="text-green-600 font-medium hover:underline">
@@ -135,26 +149,58 @@
         <?php if ($currentPage > 1): ?>
             <a href="index.php?route=customers&page=<?= $currentPage - 1 ?>"
                class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
-                Previous
+                << Previous
             </a>
+            <?php else: ?>
+<span class="opacity-50 cursor-not-allowed"><< Previous</span>
         <?php endif; ?>
 
         <!-- Page Numbers -->
-        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-            <a href="index.php?route=customers&page=<?= $i ?>"
-               class="px-3 py-1 rounded <?= $i == $currentPage
-                    ? 'bg-gradient-to-br from-blue-500 to-slate-500  text-white'
-                    : 'bg-gray-200 hover:bg-gray-300' ?>">
-                <?= $i ?>
-            </a>
-        <?php endfor; ?>
+       <?php
+$range = 3;
+$start = max(1, $currentPage - $range);
+$end = min($totalPages, $currentPage + $range);
+?>
+
+<?php if ($start > 1): ?>
+<a href="index.php?route=customers&page=1"
+class="px-3 py-1 bg-gray-200 rounded">1</a>
+
+<?php if ($start > 2): ?>
+<span class="px-2">...</span>
+<?php endif; ?>
+<?php endif; ?>
+
+<?php for ($i = $start; $i <= $end; $i++): ?>
+<a href="index.php?route=customers&page=<?= $i ?>"
+class="px-3 py-1 rounded <?= $i == $currentPage
+? 'bg-gradient-to-br from-blue-500 to-slate-500 text-white'
+: 'bg-gray-200 hover:bg-gray-300' ?>">
+<?= $i ?>
+</a>
+<?php endfor; ?>
+
+<?php if ($end < $totalPages): ?>
+
+<?php if ($end < $totalPages - 1): ?>
+<span class="px-2">...</span>
+<?php endif; ?>
+
+<a href="index.php?route=customers&page=<?= $totalPages ?>"
+class="px-3 py-1 bg-gray-200 rounded">
+<?= $totalPages ?>
+</a>
+
+<?php endif; ?>
 
         <!-- Next Button -->
         <?php if ($currentPage < $totalPages): ?>
             <a href="index.php?route=customers&page=<?= $currentPage + 1 ?>"
                class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
-                Next
+                Next >>
             </a>
+            <?php else: ?>
+<span class="opacity-50 cursor-not-allowed">Next >></span>
         <?php endif; ?>
 
     </div>

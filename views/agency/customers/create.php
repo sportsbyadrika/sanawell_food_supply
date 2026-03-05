@@ -100,6 +100,7 @@
     <?php foreach ($routes as $route): ?>
         <option value="<?= $route['id'] ?>">
             <?= htmlspecialchars($route['name']) ?>
+            (<?= htmlspecialchars($route['type']) ?>)
         </option>
     <?php endforeach; ?>
 

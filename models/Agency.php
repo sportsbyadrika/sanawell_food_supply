@@ -26,10 +26,55 @@ class Agency extends BaseModel
         return (int) $stmt->fetchColumn();
     }
 
-    /**
-     * Create a new agency
-     */
-   public function create(array $data): int
+    public function getByStatus($status)
+{
+    $stmt = $this->db->prepare("SELECT * FROM agencies WHERE status = ?");
+    $stmt->execute([$status]);
+    return $stmt->fetchAll();
+}
+
+public function filter($status = null, $from = null, $to = null, $agencyAdminRoleId)
+{
+    $sql = "
+        SELECT 
+            a.*,
+            (
+                SELECT u.last_login
+                FROM users u
+                WHERE u.agency_id = a.id
+                AND u.role_id = :role_id
+                AND u.last_login IS NOT NULL
+                ORDER BY u.last_login DESC
+                LIMIT 1
+            ) AS last_login
+        FROM agencies a
+        WHERE 1=1
+    ";
+
+    $params = [
+        ':role_id' => $agencyAdminRoleId
+    ];
+
+    if (!empty($status)) {
+        $sql .= " AND a.status = :status";
+        $params[':status'] = $status;
+    }
+
+    if (!empty($from) && !empty($to)) {
+        $sql .= " AND DATE(a.created_at) BETWEEN :from AND :to";
+        $params[':from'] = $from;
+        $params[':to']   = $to;
+    }
+
+    $sql .= " ORDER BY a.created_at DESC";
+
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute($params);
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+    public function create(array $data): int
 {
     
     $sql = "
@@ -51,9 +96,6 @@ class Agency extends BaseModel
 
     return (int) $this->db->lastInsertId();
 }
-    /**
-     * Update agency status (activate / deactivate)
-     */
     public function updateStatus(int $id, string $status): void
     {
         $stmt = $this->db->prepare(
@@ -65,16 +107,29 @@ class Agency extends BaseModel
             'id' => $id,
         ]);
     }
-    public function getAll(): array
+
+ public function getAll($agencyAdminRoleId)
 {
-    $stmt = $this->db->query(
-        "SELECT id, name,contact_number, contact_email,whatsapp_number, status 
-         FROM agencies 
-         ORDER BY created_at DESC"
-    );
+    $stmt = $this->db->prepare("
+        SELECT 
+            a.*,
+            (
+                SELECT u.last_login
+                FROM users u
+                WHERE u.agency_id = a.id
+                  AND u.role_id = :role_id
+                ORDER BY u.last_login DESC
+                LIMIT 1
+            ) AS last_login
+        FROM agencies a
+        ORDER BY a.created_at DESC
+    ");
+
+    $stmt->execute(['role_id' => $agencyAdminRoleId]);
 
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
+
 public function countPending(): int
 {
     $stmt = $this->db->query(
@@ -96,4 +151,6 @@ public function findById(int $id): ?array
 
     return $agency ?: null;
 }
+
+
 }

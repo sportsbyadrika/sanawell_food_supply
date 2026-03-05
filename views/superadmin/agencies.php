@@ -1,27 +1,74 @@
 
+<div class="bg-white shadow rounded-lg p-6">
 
-<div class="flex flex-col lg:flex-row gap-6">
-    <div class="bg-white shadow rounded-lg p-6 flex-1">
+    <!-- Header Row -->
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold text-gray-800">
+            Supply Agencies
+        </h2>
+
+        <a href="index.php?route=agencies_create"
+           class="bg-gradient-to-r from-blue-600 to-slate-600 to-indigo-600 text-white px-5 py-2 rounded-md shadow">
+            + Add Agency
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <form method="GET" class="flex flex-wrap gap-4 items-end mb-6">
+        <input type="hidden" name="route" value="agencies">
+
+        <div>
+            <label class="block text-sm text-gray-600 mb-1">Status</label>
+            <select name="status" class="border rounded-md px-3 py-2 w-40">
+                <option value="">All</option>
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+                <option value="inactive">Inactive</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm text-gray-600 mb-1">From</label>
+            <input type="date" name="from_date" class="border rounded-md px-3 py-2">
+        </div>
+
+        <div>
+            <label class="block text-sm text-gray-600 mb-1">To</label>
+            <input type="date" name="to_date" class="border rounded-md px-3 py-2">
+        </div>
+
+        <button type="submit"
+                class="bg-gradient-to-r from-blue-600 to-slate-600 to-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-md">
+            Filter
+        </button>
         
-        <h2 class="text-xl font-semibold mb-4">Supply Agencies</h2>
-        <table class="w-full text-sm">
+        </form>
+    
+
+       <div class="overflow-x-auto">
+    <table class="min-w-full text-sm">
             <thead>
-                <tr class="text-left text-gray-500 border-b">
-                    <th class="py-2">Name</th>
-                    <th class="py-2">Contact Number</th>
-                    <th class="py-2">Contact Email</th>
-                    <th class="py-2">Whatsapp Number</th>
-                    <th class="py-2">Status</th>
-                    <th class="py-2">Action</th>
+                <tr class="border-b hover:bg-gray-50 transition">
+                    <th class="py-2 text-left">Name</th>
+                    <th class="py-2 text-left">Contact Number</th>
+                    <th class="py-2 text-left">Contact Email</th>
+                    <th class="py-2 text-left">Whatsapp Number</th>
+                    <th class="py-2 text-left">Registerd Date</th>
+                    <th class="py-2 text-left">Status</th>
+                    <th class="py-2 text-left">Action</th>
+                    <th class="py-2 text-left">Last Login</th>
+                   
                 </tr>
+              
             </thead>
             <tbody>
                 <?php foreach ($agencies as $agency): ?>
-                    <tr class="border-b">
-                        <td class="py-2 font-medium"><?= htmlspecialchars($agency['name']) ?></td>
-                         <td class="py-2 text-gray-500"><?= htmlspecialchars($agency['contact_number']) ?></td>
-                        <td class="py-2 text-gray-500"><?= htmlspecialchars($agency['contact_email']) ?></td>
-                         <td class="py-2 text-gray-500"><?= htmlspecialchars($agency['whatsapp_number']) ?></td>
+                    <tr class="border-b hover:bg-gray-50 transition">
+                        <td class="py-3 space-x-3"><?= htmlspecialchars($agency['name']) ?></td>
+                        <td class="py-3 space-x-3"><?= htmlspecialchars($agency['contact_number']) ?></td>
+                        <td class="py-3 space-x-3"><?= htmlspecialchars($agency['contact_email']) ?></td>
+                        <td class="py-3 space-x-3"><?= htmlspecialchars($agency['whatsapp_number']) ?></td>
+                        <td class="py-3 space-x-3"><?= date('d-m-Y', strtotime($agency['created_at'])) ?></td>
                         <td class="py-2">
                             <span class="px-2 py-1 rounded-full text-xs <?= $agency['status'] === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' ?>">
                                 <?= htmlspecialchars($agency['status']) ?>
@@ -36,34 +83,34 @@
                                     <?= $agency['status'] === 'active' ? 'Deactivate' : 'Activate' ?>
                                 </button>
                             </form>
+                            <form method="POST" action="index.php?route=tenant_admin_reset" style="display:inline;">
+    <input type="hidden" name="agency_id" value="<?= $agency['id'] ?>">
+    <input type="hidden" name="_csrf_token" value="<?= $csrf_token ?>">
+    <button type="submit"
+        onclick="return confirm('Are you sure?')"
+        class="text-red-600 hover:underline ">
+        Reset Admin Password
+    </button>
+     <td class="py-2">
+    <?= !empty($agency['last_login'])
+        ? date('d-m-Y h:i A', strtotime($agency['last_login']))
+        : 'Never logged in' ?>
+</td>
+     
+</form>
                         </td>
+                        
                     </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
     </div>
-
-    <div class="bg-white shadow rounded-lg p-6 w-full lg:w-96">
-        <h2 class="text-xl font-semibold mb-4">Add New Agency</h2>
-        <form method="POST" action="index.php?route=agencies_store">
-            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700">Agency Name</label>
-                <input type="text" name="name" required class="mt-1 w-full border border-gray-300 rounded px-3 py-2">
-            </div>
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700" required >Contact Number</label>
-                <input type="text" name="contact_number" required class="mt-1 w-full border border-gray-300 rounded px-3 py-2">
-            </div>
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700">Contact Email</label>
-                <input type="email" name="contact_email" required class="mt-1 w-full border border-gray-300 rounded px-3 py-2">
-            </div>
-             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700" required>Whatsapp Number</label>
-                <input type="text" name="whatsapp_number" required class="mt-1 w-full border border-gray-300 rounded px-3 py-2">
-            </div>
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Create Agency</button>
-        </form>
+    <?php if (!empty($_SESSION['dev_temp_password'])): ?>
+    <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 p-3 rounded mb-4">
+        <strong>Temporary Password:</strong>
+        <?= $_SESSION['dev_temp_password']; ?>
     </div>
-</div>
+<?php unset($_SESSION['dev_temp_password']); ?>
+<?php endif; ?>
+                </div>
+   

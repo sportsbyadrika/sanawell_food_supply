@@ -5,28 +5,39 @@
 
         <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
         <input type="hidden" name="cropped_image" id="croppedImage">
-
+          
         <div class="mb-4">
             <label class="block mb-1 text-sm font-medium">Product Name</label>
             <input type="text" name="name"
                 class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
-        <div class="mb-4">
-    <label class="block mb-1 text-sm font-medium">Product Type</label>
-    <select name="variant"
-        class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <option value="">Select Type</option>
-        <option value="packed_500ml">🥛 Packed (500 ml)</option>
-        <option value="loose_500ml">🧴 Loose (500 ml)</option>
-        <option value="loose_1l">🧴 Loose (1 L)</option>
-    </select>
-</div>
+        
 
         <div class="mb-4">
             <label class="block mb-1 text-sm font-medium">Description</label>
             <textarea name="description"
                 class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
         </div>
+          <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-600 mb-2">
+                    Product Type
+                </label>
+
+                <select name="variant" class="w-full border rounded-lg px-4 py-2">
+                    <option value="">select type</option>
+    <option value="packed_500ml" <?= ($variant ?? '')=='packed_500ml'?'selected':'' ?>>
+          🥛 Packed (500 ml)
+    </option>
+
+    <option value="loose_500ml" <?= ($variant ?? '')=='loose_500ml'?'selected':'' ?>>
+         🧴 Loose (500 ml)
+    </option>
+
+    <option value="loose_1l" <?= ($variant ?? '')=='loose_1l'?'selected':'' ?>>
+         🧴 Loose (1 L)
+    </option>
+</select>
+            </div>
         <div class="mb-4">
     <label class="block text-sm font-medium mb-2">Product Image</label>
 

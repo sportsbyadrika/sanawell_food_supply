@@ -74,6 +74,31 @@ public function updatePasswordAndUnlock(int $userId, string $passwordHash): void
     );
     $stmt->execute([$passwordHash, $userId]);
 }
+
+public function updateAdminPassword(int $agencyId, string $passwordHash): bool
+{
+    $stmt = $this->db->prepare("
+        UPDATE users 
+        SET password_hash = ?, first_login = 1
+        WHERE agency_id = ? 
+        AND role_id = ?
+        LIMIT 1
+    ");
+
+    $config = require __DIR__ . '/../config/config.php';
+    $agencyAdminRoleId = $config['roles']['AGENCY_ADMIN']['id'];
+
+    return $stmt->execute([$passwordHash, $agencyId, $agencyAdminRoleId]);
+}
+
+public function updateLastLogin(int $id): void
+{
+    $stmt = $this->db->prepare(
+        "UPDATE users SET last_login = NOW() WHERE id = :id"
+    );
+
+    $stmt->execute(['id' => $id]);
+}
 public function getAgencyStaffUsers(
     int $agencyId,
     int $officeStaffRoleId,
@@ -189,5 +214,19 @@ public function updatePasswordAndClearToken(int $id, string $hash): void
         WHERE id = ?
     ");
     $stmt->execute([$hash, $id]);
+}
+
+public function getDriversByAgency($agencyId)
+{
+    $stmt = $this->db->prepare("
+        SELECT id, name
+        FROM users
+        WHERE agency_id = ?
+        AND role_id = 8
+        AND status = 1
+    ");
+
+    $stmt->execute([$agencyId]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 }
