@@ -38,20 +38,39 @@ class DriverDeliveryController extends BaseController
         ]);
     }
 
-    public function markDelivered()
+   public function markDelivered()
 {
-    if (!isset($_GET['order_id'])) {
-        die("Order ID missing");
-    }
+Auth::requireDriver();
 
-    $orderId = $_GET['order_id'];
+$id = $_GET['id'];
 
-    $model = new DeliveryModel();
-    $model->markAsDelivered($orderId);
+$model = new DeliveryModel();
+$model->updateStatus($id,'delivered');
 
-    $routeId = $model->getRouteIdByOrder($orderId);
+header("Location:index.php?route=driver_delivery&route_id=".$_GET['route_id']);
+}
 
-    header("Location: index.php?route=driver_delivery&route_id=" . $routeId);
-    exit;
+public function notDeliveredForm()
+{
+Auth::requireDriver();
+
+$id = $_GET['id'];
+
+require '../views/driver/not_delivered.php';
+}
+
+public function saveNotDelivered()
+{
+Auth::requireDriver();
+
+$id = $_POST['delivery_id'];
+$reason = $_POST['reason'];
+$remarks = $_POST['remarks'];
+
+$model = new DeliveryModel();
+
+$model->markNotDelivered($id,$reason,$remarks);
+
+header("Location:index.php?route=driver_dashboard");
 }
 }

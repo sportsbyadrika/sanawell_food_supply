@@ -1,156 +1,152 @@
-<div class="max-w-7xl mx-auto py-8 px-4">
+<div class="max-w-3xl mx-auto px-3">
 
-    <!-- Page Header -->
-    <div class="flex justify-between items-center mb-6">
-        <div>
-            <h2 class="text-2xl font-bold text-gray-800">
-                🚚 Today's Deliveries
-            </h2>
-            <p class="text-gray-500 text-sm">
-                Route-wise delivery list
-            </p>
-        </div>
+<h2 class="text-xl font-semibold mb-4">
+Today's Deliveries
+</h2>
 
-        <a href="index.php?route=driver_dashboard"
-           class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition">
-            Back
-        </a>
-    </div>
+<?php foreach ($deliveries as $delivery): ?>
 
-<?php if (empty($deliveries)): ?>
+<?php
+$id = $delivery['id'];
+$status = $delivery['status'] ?? 'pending';
+?>
 
-    <div class="bg-white shadow rounded-xl p-6 text-center text-gray-500">
-        No deliveries assigned for today.
-    </div>
+<div class="bg-white rounded-xl shadow-md p-4 mb-4 border border-gray-200">
+
+<!-- HEADER -->
+<div class="flex justify-between items-start mb-2">
+
+<div class="font-semibold text-base md:text-lg">
+#<?= $delivery['order_no'] ?> <?= $delivery['name'] ?>
+</div>
+
+<div>
+<?php if($status=='pending'): ?>
+<span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs">
+Pending
+</span>
+<?php elseif($status=='delivered'): ?>
+<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">
+Delivered
+</span>
+<?php else: ?>
+<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs">
+Not Delivered
+</span>
+<?php endif; ?>
+</div>
+
+</div>
+
+
+<!-- PHONE -->
+<div class="text-sm text-gray-600 mb-1">
+
+<a href="tel:<?= $delivery['mobile'] ?>" class="flex items-center gap-2 text-blue-600">
+
+<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
+fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+d="M3 5a2 2 0 012-2h2l2 5-2 2a11 11 0 005 5l2-2 5 2v2a2 2 0 01-2 2h-1C9.163 20 4 14.837 4 8V7a2 2 0 01-1-2z" />
+
+</svg>
+
+<?= $delivery['mobile'] ?>
+
+</a>
+
+</div>
+
+
+<!-- ADDRESS + MAP -->
+<div class="text-sm text-gray-700 mb-2 flex items-start gap-2">
+
+<div class="flex-1">
+
+<span class="flex items-start gap-2">
+
+<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mt-1 text-red-500"
+fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" />
+
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+
+</svg>
+
+<?= $delivery['address'] ?>
+
+</span>
+
+</div>
+
+<!-- MAP ICON -->
+
+<a target="_blank"
+href="https://www.google.com/maps/search/?api=1&query=<?= urlencode($delivery['address']) ?>"
+class="text-blue-600">
+
+<svg xmlns="http://www.w3.org/2000/svg"
+class="w-5 h-5"
+fill="none"
+viewBox="0 0 24 24"
+stroke="currentColor">
+
+<path stroke-linecap="round"
+stroke-linejoin="round"
+stroke-width="2"
+d="M9 20l-5.447-2.724A1 1 0 013 16.382V4.618a1 1 0 011.553-.832L9 6m0 14l6-3m-6 3V6m6 11l5.447 2.724A1 1 0 0021 18.382V6.618a1 1 0 00-1.553-.832L15 9m0 8V9m0 0L9 6" />
+
+</svg>
+
+</a>
+
+</div>
+
+
+<!-- PRODUCT -->
+<div class="text-sm text-gray-800 mb-1">
+<?= $delivery['product_name'] ?> (<?= $delivery['variant'] ?>)
+</div>
+
+
+<!-- QTY -->
+<div class="font-semibold text-sm mb-3">
+Qty: <?= $delivery['quantity'] ?>
+</div>
+
+
+<!-- ACTION BUTTONS -->
+
+<?php if($status=='pending'): ?>
+
+<div class="flex gap-2">
+
+<a class="flex-1 text-center bg-emerald-500 hover:bg-emerald-300 text-white py-3 rounded-md text-sm font-medium transition"
+href="index.php?route=driver_mark_delivered&id=<?=$id?>&route_id=<?=$route_id?>">
+Delivered
+</a>
+
+<a class="flex-1 text-center bg-rose-500 hover:bg-rose-300 text-white py-2 rounded-md text-sm font-medium transition"
+href="index.php?route=driver_not_delivered&id=<?=$id?>&route_id=<?=$route_id?>">
+Not Delivered
+</a>
+</div>
 
 <?php else: ?>
 
-    <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-200">
-
-        <table class="min-w-full text-sm text-left">
-
-            <!-- Header -->
-            <thead class="bg-gradient-to-br from-blue-500 to-slate-500 
-                    text-white px-6 py-3 font-semibold text-white hidden md:table-header-group">
-                <tr>
-                    <th class="px-5 py-3">#</th>
-                    <th class="px-5 py-3">Visit</th>
-                    <th class="px-5 py-3">Customer</th>
-                    <th class="px-5 py-3">Mobile</th>
-                    <th class="px-5 py-3">Address</th>
-                    <th class="px-5 py-3">Product</th>
-                    <th class="px-5 py-3 text-center">Qty</th>
-                    <th class="px-5 py-3 text-center">Status</th>
-                    <th class="px-5 py-3 text-center">Action</th>
-                </tr>
-            </thead>
-
-            <tbody class="divide-y divide-gray-200">
-
-            <?php $count = 1; ?>
-            <?php foreach ($deliveries as $delivery): ?>
-
-                <?php
-                    $orderNo  = $delivery['order_no'] ?? '-';
-                    $name     = $delivery['name'] ?? 'Customer';
-                    $mobile   = $delivery['mobile'] ?? '';
-                    $address  = $delivery['address'] ?? '';
-                    $product  = $delivery['product_name'] ?? '';
-                    $variant  = $delivery['variant'] ?? '';
-                    $quantity = $delivery['quantity'] ?? 0;
-                    $status   = $delivery['status'] ?? 'pending';
-                    $id       = $delivery['id'] ?? 0;
-                ?>
-
-                <tr class="block md:table-row hover:bg-gray-50 transition p-4 md:p-0">
-
-                    <!-- Customer Number -->
-                    <td class="block md:table-cell px-5 py-2 font-semibold">
-                        <span class="md:hidden text-gray-400 text-xs">Customer No:</span>
-                        <?= $count++ ?>
-                    </td>
-
-                    <!-- Visit -->
-                    <td class="block md:table-cell px-5 py-2">
-                        <span class="md:hidden text-gray-400 text-xs">Visit:</span>
-                        #<?= htmlspecialchars($orderNo) ?>
-                    </td>
-
-                    <!-- Customer -->
-                    <td class="block md:table-cell px-5 py-2 font-semibold text-gray-800">
-                        <span class="md:hidden text-gray-400 text-xs">Customer:</span>
-                        <?= htmlspecialchars($name) ?>
-                    </td>
-
-                    <!-- Mobile -->
-                    <td class="block md:table-cell px-5 py-2 text-gray-600">
-                        <span class="md:hidden text-gray-400 text-xs">Mobile:</span>
-                        <?= htmlspecialchars($mobile) ?>
-                    </td>
-
-                    <!-- Address -->
-                    <td class="block md:table-cell px-5 py-2 text-gray-600">
-                        <span class="md:hidden text-gray-400 text-xs">Address:</span>
-                        <?= htmlspecialchars($address) ?>
-                    </td>
-
-                    <!-- Product -->
-                    <td class="block md:table-cell px-5 py-2 text-gray-700">
-                        <span class="md:hidden text-gray-400 text-xs">Product:</span>
-                        <?= htmlspecialchars($product) ?>
-                        <?php if ($variant): ?>
-                            <span class="text-gray-500">
-                                (<?= htmlspecialchars($variant) ?>)
-                            </span>
-                        <?php endif; ?>
-                    </td>
-
-                    <!-- Quantity -->
-                    <td class="block md:table-cell px-5 py-2 font-bold text-blue-600 md:text-center">
-                        <span class="md:hidden text-gray-400 text-xs">Quantity:</span>
-                        <?= $quantity ?>
-                    </td>
-
-                    <!-- Status -->
-                    <td class="block md:table-cell px-5 py-2 md:text-center">
-                        <span class="md:hidden text-gray-400 text-xs">Status:</span>
-
-                        <?php if ($status === 'delivered'): ?>
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                                Delivered
-                            </span>
-                        <?php elseif ($status === 'partial'): ?>
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-                                Partial
-                            </span>
-                        <?php elseif ($status === 'not_delivered'): ?>
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                                Not Delivered
-                            </span>
-                        <?php else: ?>
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
-                                Pending
-                            </span>
-                        <?php endif; ?>
-                    </td>
-
-                    <!-- Action -->
-                    <td class="block md:table-cell px-5 py-2 md:text-center">
-                        <a href="index.php?route=order_details&id=<?= $id ?>"
-                           class="bg-gradient-to-br from-blue-500 to-slate-500  hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-xs font-medium inline-block mt-2 md:mt-0 transition">
-                            Update
-                        </a>
-                    </td>
-
-                </tr>
-
-            <?php endforeach; ?>
-
-            </tbody>
-        </table>
-
-    </div>
+<div class="text-green-600 font-semibold text-sm">
+Completed
+</div>
 
 <?php endif; ?>
+
+
+</div>
+
+<?php endforeach; ?>
 
 </div>

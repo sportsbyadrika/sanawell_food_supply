@@ -131,9 +131,9 @@ public function update()
     $productModel = new Product();
     $existingProduct = $productModel->find($id);
 
-    $imageName = $existingProduct['image']; // keep old image
+    $imageName = $existingProduct['image']; 
 
-    // Check if new image uploaded
+
     if (!empty($_FILES['image']['name'])) {
 
         $uploadDir = __DIR__ . '/../public/uploads/';

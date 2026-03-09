@@ -95,8 +95,12 @@ $routes = [
 'route_order_update' => [RouteConfigurationController::class, 'updateRouteOrder'],
 'generate_delivery' => [RouteConfigurationController::class, 'generateDelivery'],
 'today_delivery_view' => [RouteConfigurationController::class, 'todayDeliveryView'],
-'mark_delivered' => [DriverDeliveryController::class, 'markDelivered'],
 
+'updateQty' => [RouteConfigurationController::class, 'updateQty'],
+'cancel_order' => [RouteConfigurationController::class, 'cancelOrder'],
+'driver_mark_delivered' => ['DriverController','markDelivered'],
+'driver_not_delivered' => ['DriverController','notDeliveredForm'],
+'driver_save_not_delivered' => ['DriverController','saveNotDelivered'],
 'delivery_report' => [ReportController::class, 'deliveryreport'],
 'generate_monthly_bill'=>[ReportController::class,'generateMonthlyBill'],
 

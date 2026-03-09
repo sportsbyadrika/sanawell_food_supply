@@ -67,6 +67,42 @@
                     <?= $total ?> Customers
                 </span>
             </div>
+<!-- PRODUCT SUMMARY -->
+<div class="grid grid-cols-2 gap-2 mb-4">
+
+<?php
+$products = $route['products'] ?? [];
+$total_packets = array_sum($products);
+?>
+<?php foreach ($products as $product => $qty): ?>
+
+<div class="bg-gray-50 rounded-lg p-3 text-center">
+
+<div class="text-xs text-gray-500">
+<?= htmlspecialchars($product) ?>
+</div>
+
+<div class="text-lg font-bold text-blue-600">
+<?= $qty ?>
+</div>
+
+</div>
+
+<?php endforeach; ?>
+<div class="mt-3 border-t pt-3">
+
+<div class="flex justify-between text-sm font-semibold">
+
+<span>Total Packets</span>
+
+<span class="text-purple-600">
+<?= $total_packets ?>
+</span>
+
+</div>
+
+</div>
+</div>
 
             <!-- Divider -->
             <div class="my-4 border-t border-gray-200"></div>
@@ -103,7 +139,7 @@
             <!-- Start / Continue Button -->
             <div class="mt-6">
                 <a href="index.php?route=driver_delivery&route_id=<?= $routeId ?>"
-                   class="inline-block <?= $buttonColor ?> text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                   class="inline-block bg-gradient-to-br from-blue-500 to-slate-500text-white px-4 py-2 rounded-lg text-sm font-medium transition">
                     <?= $buttonText ?>
                 </a>
             </div>

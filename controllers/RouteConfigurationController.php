@@ -8,6 +8,7 @@ class RouteConfigurationController extends BaseController
     {
         parent::__construct();
         $this->routeModel = new Route();
+         $this->DeliveryModel = new DeliveryModel();
     }
 
     public function index()
@@ -63,44 +64,67 @@ public function updateRouteOrder()
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $customerId = $_POST['customer_id'] ?? null;
-        $newOrder   = $_POST['new_order'] ?? null;
-        $routeId    = $_POST['route_id'] ?? $_GET['id'] ?? null;
+        $newOrder = (int)($_POST['new_order'] ?? 0);
+        $routeId = $_POST['route_id'] ?? $_GET['id'] ?? null;
 
         if (!$customerId || !$newOrder || !$routeId) {
             die("Invalid request");
         }
 
-        $this->routeModel->updateCustomerOrder($customerId, $newOrder, $routeId);
-
         $db = Database::connection();
 
-        $check = $db->prepare("
-            SELECT id FROM route_customers
+        
+        $stmt = $db->prepare("
+            SELECT delivery_order 
+            FROM route_customers 
             WHERE route_id = ? AND customer_id = ?
         ");
-        $check->execute([$routeId, $customerId]);
-        $existing = $check->fetch(PDO::FETCH_ASSOC);
 
-        if ($existing) {
+        $stmt->execute([$routeId, $customerId]);
+        $current = $stmt->fetchColumn();
 
-            $update = $db->prepare("
-                UPDATE route_customers
-                SET delivery_order = ?
-                WHERE route_id = ? AND customer_id = ?
-            ");
-            $update->execute([$newOrder, $routeId, $customerId]);
-
-        } else {
-
-            $insert = $db->prepare("
-                INSERT INTO route_customers
-                (route_id, customer_id, delivery_order, created_at)
-                VALUES (?, ?, ?, NOW())
-            ");
-            $insert->execute([$routeId, $customerId, $newOrder]);
+        if (!$current) {
+            die("Customer not found in route");
         }
 
-        header("Location: index.php?route=route_configuration_manage&id=" . $routeId);
+        
+        if ($newOrder > $current) {
+
+            $shift = $db->prepare("
+                UPDATE route_customers
+                SET delivery_order = delivery_order - 1
+                WHERE route_id = ?
+                AND delivery_order > ?
+                AND delivery_order <= ?
+            ");
+
+            $shift->execute([$routeId, $current, $newOrder]);
+        }
+
+        
+        if ($newOrder < $current) {
+
+            $shift = $db->prepare("
+                UPDATE route_customers
+                SET delivery_order = delivery_order + 1
+                WHERE route_id = ?
+                AND delivery_order >= ?
+                AND delivery_order < ?
+            ");
+
+            $shift->execute([$routeId, $newOrder, $current]);
+        }
+
+        
+        $update = $db->prepare("
+            UPDATE route_customers
+            SET delivery_order = ?
+            WHERE route_id = ? AND customer_id = ?
+        ");
+
+        $update->execute([$newOrder, $routeId, $customerId]);
+
+        header("Location: index.php?route=route_configuration_manage&id=".$routeId);
         exit;
     }
 }
@@ -156,6 +180,7 @@ public function todayDeliveryView()
     }
 
     $deliveryModel = new DeliveryModel();
+    $loadSummary = $deliveryModel->getDeliveryLoadSummary($routeId);
 
     if (!$deliveryModel->deliveryExistsToday($routeId)) {
         $deliveryModel->generateDeliveryForRoute($routeId);
@@ -174,11 +199,40 @@ public function todayDeliveryView()
         }
     }
 
-    $this->render('agency/routes/today_delivery_view', [
-        'route' => $route,
-        'deliveries' => $deliveries,
-        'pendingCount' => $pendingCount,
-        'deliveredCount' => $deliveredCount
+  $this->render('agency/routes/today_delivery_view', [
+    'route' => $route,
+    'deliveries' => $deliveries,
+    'pendingCount' => $pendingCount,
+    'deliveredCount' => $deliveredCount,
+    'loadSummary' => $loadSummary
+]);
+}
+
+
+public function updateQty()
+{
+    header('Content-Type: application/json');
+
+    $id = $_POST['id'] ?? 0;
+    $change = $_POST['change'] ?? 0;
+    $routeId = $_POST['route_id'] ?? 0;
+
+    $model = new DeliveryModel();
+
+    if ($change == 1) {
+        $model->increaseQty($id);
+    } else {
+        $model->decreaseQty($id);
+    }
+
+    $qty = $model->getQty($id);
+
+    echo json_encode([
+        "success" => true,
+        "qty" => $qty,
+        "summary" => $model->getDeliveryLoadSummary($routeId)
     ]);
+
+    exit;
 }
 }
