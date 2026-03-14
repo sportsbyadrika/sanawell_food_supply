@@ -22,14 +22,10 @@
                 Map View
             </button>
 
-            <form method="POST"
-                  action="index.php?route=generate_delivery&id=<?= $route['id'] ?>"
-                  style="display:inline;">
-                <button type="submit"
-                        class="px-4 py-2 bg-gradient-to-br from-blue-500 to-slate-500 text-white rounded-lg shadow hover:opacity-90">
-                    Generate Today Delivery
-                </button>
-            </form>
+            <a href="index.php?route=today_delivery_view&id=<?= $route['id'] ?>"
+class="bg-gradient-to-br from-slate-600 via-blue-500 to-slate-600 text-white px-4 py-2 rounded-lg">
+Generate Today Delivery
+</a>
         </div>
     </div>
 

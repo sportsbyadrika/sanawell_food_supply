@@ -1,152 +1,273 @@
-<div class="max-w-3xl mx-auto px-3">
 
-<h2 class="text-xl font-semibold mb-4">
-Today's Deliveries
-</h2>
+<div class="max-w-4xl mx-auto px-4 py-4">
+<div class="flex gap-3 mb-4 text-sm">
+
+<div class="bg-yellow-100 px-3 py-1 rounded">
+Pending: <?= count(array_filter($deliveries, fn($d)=>$d['status']=='pending')) ?>
+</div>
+
+<div class="bg-green-100 px-3 py-1 rounded">
+Delivered: <?= count(array_filter($deliveries, fn($d)=>$d['status']=='delivered')) ?>
+</div>
+
+<div class="bg-red-100 px-3 py-1 rounded">
+Failed: <?= count(array_filter($deliveries, fn($d)=>$d['status']=='not_delivered')) ?>
+</div>
+
+</div>
+<h1 class="text-xl font-bold mb-4">Today's Deliveries</h1>
+
+<?php $deliveries = $deliveries ?? []; ?>
+
+
+<!-- ================= PENDING ================= -->
+
+
+
+<div class="space-y-4">
 
 <?php foreach ($deliveries as $delivery): ?>
+<?php if ($delivery['status'] == 'pending'): ?>
 
-<?php
-$id = $delivery['id'];
-$status = $delivery['status'] ?? 'pending';
-?>
+<div class="bg-white shadow rounded-xl p-4 border">
 
-<div class="bg-white rounded-xl shadow-md p-4 mb-4 border border-gray-200">
-
-<!-- HEADER -->
-<div class="flex justify-between items-start mb-2">
-
-<div class="font-semibold text-base md:text-lg">
-#<?= $delivery['order_no'] ?> <?= $delivery['name'] ?>
-</div>
+<div class="flex justify-between items-start">
 
 <div>
-<?php if($status=='pending'): ?>
-<span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs">
+<div class="font-semibold text-gray-800">
+#<?= $delivery['order_no'] ?> - <?= $delivery['name'] ?>
+</div>
+
+<div class="text-xs text-gray-500 mt-1">
+<?= $delivery['address'] ?>
+</div>
+</div>
+
+<span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded">
 Pending
 </span>
-<?php elseif($status=='delivered'): ?>
-<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">
-Delivered
-</span>
+
+</div>
+
+
+<!-- PRODUCTS -->
+
+<div class="mt-2">
+
+<?php if(!empty($delivery['products'])): ?>
+
+    <?php foreach ($delivery['products'] as $product): ?>
+
+        <div class="bg-blue-50 text-green-700 px-2 py-1 rounded inline-block text-sm font-medium mr-2 mb-1">
+            <?= htmlspecialchars($product['name']) ?>
+            (<?= htmlspecialchars($product['variant']) ?>)
+            x<?= $product['qty'] ?>
+        </div>
+
+    <?php endforeach; ?>
+
 <?php else: ?>
-<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs">
-Not Delivered
-</span>
+
+<span class="text-muted">No products</span>
+
 <?php endif; ?>
-</div>
 
 </div>
+<!-- PHONE + MAP -->
 
+<div class="flex justify-between items-center mt-3">
 
-<!-- PHONE -->
-<div class="text-sm text-gray-600 mb-1">
+<a href="tel:<?= $delivery['mobile'] ?>"
+class="text-blue-600 text-sm font-medium">
 
-<a href="tel:<?= $delivery['mobile'] ?>" class="flex items-center gap-2 text-blue-600">
-
-<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
-fill="none" viewBox="0 0 24 24" stroke="currentColor">
-
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-d="M3 5a2 2 0 012-2h2l2 5-2 2a11 11 0 005 5l2-2 5 2v2a2 2 0 01-2 2h-1C9.163 20 4 14.837 4 8V7a2 2 0 01-1-2z" />
-
-</svg>
-
-<?= $delivery['mobile'] ?>
+📞 <?= $delivery['mobile'] ?>
 
 </a>
-
-</div>
-
-
-<!-- ADDRESS + MAP -->
-<div class="text-sm text-gray-700 mb-2 flex items-start gap-2">
-
-<div class="flex-1">
-
-<span class="flex items-start gap-2">
-
-<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mt-1 text-red-500"
-fill="none" viewBox="0 0 24 24" stroke="currentColor">
-
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" />
-
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-
-</svg>
-
-<?= $delivery['address'] ?>
-
-</span>
-
-</div>
-
-<!-- MAP ICON -->
 
 <a target="_blank"
 href="https://www.google.com/maps/search/?api=1&query=<?= urlencode($delivery['address']) ?>"
-class="text-blue-600">
+class="text-blue-600 text-sm">
 
-<svg xmlns="http://www.w3.org/2000/svg"
-class="w-5 h-5"
-fill="none"
-viewBox="0 0 24 24"
-stroke="currentColor">
-
-<path stroke-linecap="round"
-stroke-linejoin="round"
-stroke-width="2"
-d="M9 20l-5.447-2.724A1 1 0 013 16.382V4.618a1 1 0 011.553-.832L9 6m0 14l6-3m-6 3V6m6 11l5.447 2.724A1 1 0 0021 18.382V6.618a1 1 0 00-1.553-.832L15 9m0 8V9m0 0L9 6" />
-
-</svg>
+📍 Map
 
 </a>
 
-</div>
-
-
-<!-- PRODUCT -->
-<div class="text-sm text-gray-800 mb-1">
-<?= $delivery['product_name'] ?> (<?= $delivery['variant'] ?>)
-</div>
-
-
-<!-- QTY -->
-<div class="font-semibold text-sm mb-3">
-Qty: <?= $delivery['quantity'] ?>
 </div>
 
 
 <!-- ACTION BUTTONS -->
 
-<?php if($status=='pending'): ?>
+<div class="flex gap-2 mt-3">
 
-<div class="flex gap-2">
-
-<a class="flex-1 text-center bg-emerald-500 hover:bg-emerald-300 text-white py-3 rounded-md text-sm font-medium transition"
-href="index.php?route=driver_mark_delivered&id=<?=$id?>&route_id=<?=$route_id?>">
+<a 
+class="flex-1 text-center bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg text-sm font-medium"
+href="index.php?route=driver_mark_delivered&id=<?=$delivery['id']?>">
 Delivered
 </a>
 
-<a class="flex-1 text-center bg-rose-500 hover:bg-rose-300 text-white py-2 rounded-md text-sm font-medium transition"
-href="index.php?route=driver_not_delivered&id=<?=$id?>&route_id=<?=$route_id?>">
+<button
+onclick="openReasonModal(<?= $delivery['id'] ?>)"
+class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg text-sm font-medium">
+
 Not Delivered
-</a>
+
+</button>
+
 </div>
 
-<?php else: ?>
-
-<div class="text-green-600 font-semibold text-sm">
-Completed
 </div>
 
 <?php endif; ?>
-
-
-</div>
-
 <?php endforeach; ?>
 
 </div>
+
+
+
+<!-- ================= DELIVERED ================= -->
+
+<h2 class="text-lg font-semibold mt-6 mb-2">Delivered Customers</h2>
+
+<div class="space-y-3">
+
+<?php foreach ($deliveries as $delivery): ?>
+<?php if ($delivery['status'] == 'delivered'): ?>
+
+<div class="bg-green-50 border border-green-200 p-3 rounded-lg">
+
+<div class="flex justify-between">
+
+<div>
+<div class="font-semibold">
+#<?= $delivery['order_no'] ?> - <?= $delivery['name'] ?>
+</div>
+
+<div class="text-xs text-gray-500">
+<?= $delivery['address'] ?>
+</div>
+</div>
+
+<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">
+Delivered
+</span>
+
+</div>
+
+</div>
+
+<?php endif; ?>
+<?php endforeach; ?>
+
+</div>
+
+
+
+<!-- ================= FAILED ================= -->
+
+<h2 class="text-lg font-semibold mt-6 mb-2">Not Delivered</h2>
+
+<div class="space-y-3">
+
+<?php foreach ($deliveries as $delivery): ?>
+<?php if ($delivery['status'] == 'not_delivered'): ?>
+
+<div class="bg-red-50 border border-red-200 p-3 rounded-lg">
+
+<div class="flex justify-between">
+
+<div>
+<div class="font-semibold">
+#<?= $delivery['order_no'] ?> - <?= $delivery['name'] ?>
+</div>
+
+<div class="text-xs text-gray-500">
+<?= $delivery['address'] ?>
+</div>
+</div>
+
+<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs">
+Not Delivered
+</span>
+
+</div>
+
+</div>
+
+<?php endif; ?>
+<?php endforeach; ?>
+
+</div>
+
+
+</div>
+
+
+
+<!-- ================= MODAL ================= -->
+
+<div id="reasonModal"
+class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+
+<div class="bg-white p-6 rounded-lg w-80">
+
+<h3 class="font-semibold mb-3">Reason for Not Delivery</h3>
+
+<form method="POST"
+action="index.php?route=driver_save_not_delivered">
+
+<input type="hidden" name="order_id" id="order_id">
+<input type="hidden" name="route_id" value="<?= $route_id ?>">
+
+<select name="reason" class="w-full border p-2 mb-3 rounded">
+
+<option value="customer_not_home">Customer Not Home</option>
+<option value="cancelled">Customer Cancelled</option>
+<option value="address_issue">Address Issue</option>
+<option value="payment_issue">Payment Issue</option>
+
+</select>
+
+<textarea
+name="remarks"
+placeholder="Remarks"
+class="w-full border p-2 mb-3 rounded"></textarea>
+
+<div class="flex justify-end gap-2">
+
+<button
+type="button"
+onclick="closeReasonModal()"
+class="px-3 py-1 bg-gray-300 rounded">
+
+Cancel
+
+</button>
+
+<button
+type="submit"
+class="px-3 py-1 bg-blue-600 text-white rounded">
+Save
+</button>
+
+</div>
+
+</form>
+
+</div>
+<script>
+
+function openReasonModal(orderId){
+    document.getElementById('order_id').value = orderId;
+    document.getElementById('reasonModal').classList.remove('hidden');
+}
+
+function closeReasonModal()
+{
+document.getElementById('reasonModal').classList.add('hidden');
+}
+
+</script>
+
+</div>
+
+

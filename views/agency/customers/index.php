@@ -65,82 +65,156 @@ Import Customers
 
         <table class="w-full text-sm">
             <thead class="bg-slate-100 text-slate-700">
-                <tr>
-                     <th class="px-4 py-3 text-left">#</th>
-                    <th class="px-4 py-3 text-left">Name</th>
-                    <th class="px-4 py-3 text-left">Mobile</th>
-                    <th class="px-4 py-3 text-left">Customer Type</th>
-                     <th class="px-4 py-3 text-left">Route</th>
-                    <th class="px-4 py-3 text-left">whatsapp</th>
-                     <th class="px-4 py-3 text-left">Latitude</th>
-                      <th class="px-4 py-3 text-left">Longitude</th>
-                    <th class="px-4 py-3 text-left">Status</th>
-                    <th class="px-4 py-3 text-left">Action</th>
-                </tr>
-            </thead>
+<tr>
+<th class="px-4 py-3 text-left">Customer</th>
+<th class="px-4 py-3 text-left">Contact</th>
+<th class="px-4 py-3 text-left">Route</th>
+<th class="px-4 py-3 text-left">Location</th>
+<th class="px-4 py-3 text-left">Status</th>
+<th class="px-4 py-3 text-left">Action</th>
+</tr>
+</thead>
             <tbody>
-                <?php $i = ($currentPage - 1) * $perPage + 1; ?>
-                <?php foreach ($customers as $customer): ?>
-                    <tr class="border-t">
-                        <td class="px-4 py-3 text-gray-500">
-<?= $i++ ?>
+
+<?php $i = ($currentPage - 1) * $perPage + 1; ?>
+
+<?php foreach ($customers as $customer): ?>
+
+<tr class="border-b hover:bg-gray-50">
+
+<!-- CUSTOMER -->
+<td class="px-4 py-3">
+
+<div class="bg-gray-50 p-3 rounded-lg">
+
+<div class="font-semibold text-gray-800">
+<?= htmlspecialchars($customer['name']) ?>
+</div>
+
+<div class="text-sm text-gray-500">
+Type : <?= htmlspecialchars($customer['category_name'] ?? '') ?>
+</div>
+
+</div>
+
 </td>
-                        <td class="px-4 py-3 font-medium">
-                            <?= htmlspecialchars($customer['name']) ?>
-                        </td>
 
-                        <td class="px-4 py-3 font-medium">
-                            <?= htmlspecialchars($customer['mobile']) ?>
-                        </td>
 
-                        <td class="px-4 py-3 font-medium">
-                           <?= htmlspecialchars($customer['category_name'] ?? '') ?>
-                        </td>
-                        <td class="px-4 py-3 font-medium">
-                            <?= htmlspecialchars($customer['route_name'] ?? '') ?>
-                           (<?= htmlspecialchars($customer['route_type'] ?? '') ?>)
-                       <td class="px-4 py-3 font-medium">
-  <?= htmlspecialchars($customer['whatsapp'] ?? '') ?>
+<!-- CONTACT -->
+<td class="px-4 py-3">
+
+<div class="bg-gray-50 p-3 rounded-lg text-sm">
+
+<div>
+📞 <span class="text-gray-500">Mobile :</span>
+<?= htmlspecialchars($customer['mobile']) ?>
+</div>
+
+<div>
+💬 <span class="text-gray-500">WhatsApp :</span>
+<?= htmlspecialchars($customer['whatsapp']) ?>
+</div>
+
+</div>
+
 </td>
-<td class="px-4 py-3 font-medium">
-                            <?= htmlspecialchars($customer['latitude']) ?>
-                        </td>
-                        <td class="px-4 py-3 font-medium">
-                            <?= htmlspecialchars($customer['longitude']) ?>
-                        </td>
 
-                        <td class="px-4 py-3 font-medium">
-                            <?php if ($customer['status'] == 1): ?>
-                                <span class="bg-green-100 text-green-700 
-                                             px-2 py-1 rounded-full text-xs">
-                                    Active
-                                </span>
-                            <?php else: ?>
-                                <span class="bg-red-100 text-red-700 
-                                             px-2 py-1 rounded-full text-xs">
-                                    Inactive
-                                </span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="px-4 py-3 flex gap-3 items-center">
-    <a href="index.php?route=customers_edit&id=<?= $customer['id'] ?>"
-       class="text-red-600 font-medium hover:underline mr-3">
-       Edit
-    </a>
-    <a href="index.php?route=customer_manage&id=<?= $customer['id'] ?>"
-     class="text-blue-600 font-medium hover:underline mr-3">
-    Product
+
+<!-- ROUTE -->
+<td class="px-4 py-3">
+
+<div class="bg-gray-50 p-3 rounded-lg text-sm">
+
+<div>
+🚚 <?= htmlspecialchars($customer['route_name'] ?? '') ?>
+</div>
+
+<div class="text-gray-500">
+Shift : <?= htmlspecialchars($customer['route_type'] ?? '') ?>
+</div>
+
+</div>
+
+</td>
+
+
+<!-- LOCATION -->
+<td class="px-4 py-3">
+
+<div class="bg-gray-50 p-3 rounded-lg text-center">
+
+<?php if($customer['latitude'] && $customer['longitude']): ?>
+
+<a
+href="https://maps.google.com/?q=<?= $customer['latitude'] ?>,<?= $customer['longitude'] ?>"
+target="_blank"
+class="text-blue-600 hover:underline"
+>
+📍 View Map
 </a>
 
-    <a href="index.php?route=customers_toggle&id=<?= $customer['id'] ?>"
-       class="text-green-600 font-medium hover:underline">
-       Toggle
-    </a>
+<?php else: ?>
+
+<span class="text-gray-400 text-sm">No Location</span>
+
+<?php endif; ?>
+
+</div>
+
 </td>
 
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
+
+<!-- STATUS -->
+<td class="px-4 py-3">
+
+<?php if ($customer['status'] == 1): ?>
+
+<button class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+Active
+</button>
+
+<?php else: ?>
+
+<button class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm">
+Inactive
+</button>
+
+<?php endif; ?>
+
+</td>
+
+
+<!-- ACTION -->
+<td class="px-4 py-3">
+<div class="flex items-center gap-4 text-sm">
+
+<a href="index.php?route=customers_edit&id=<?= $customer['id'] ?>"
+class="flex items-center gap-1 text-green-600 hover:text-green-800">
+<span>✏</span>
+<span>Edit</span>
+</a>
+
+<a href="index.php?route=customer_manage&id=<?= $customer['id'] ?>"
+class="flex items-center gap-1 text-blue-600 hover:text-blue-800">
+<span>📦</span>
+<span>Product</span>
+</a>
+
+<a href="index.php?route=change_request&customer_id=<?= $customer['id'] ?>"
+class="flex items-center gap-1 text-orange-600 hover:text-orange-800">
+<span>🔁</span>
+<span>Change</span>
+</a>
+
+</div>
+</td>
+
+</tr>
+
+<?php $i++; ?>
+<?php endforeach; ?>
+
+</tbody>
         </table>
 <?php if ($totalPages > 1): ?>
     <div class="mt-6 flex justify-center items-center gap-2">

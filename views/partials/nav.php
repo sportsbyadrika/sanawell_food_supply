@@ -161,6 +161,10 @@ Routes
 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-xl">
 Users
 </a>
+<a href="index.php?route=vehicles"
+class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+Vehicles
+</a>
 
 </div>
 

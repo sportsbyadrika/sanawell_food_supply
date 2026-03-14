@@ -219,11 +219,13 @@ public function updatePasswordAndClearToken(int $id, string $hash): void
 public function getDriversByAgency($agencyId)
 {
     $stmt = $this->db->prepare("
-        SELECT id, name
-        FROM users
-        WHERE agency_id = ?
-        AND role_id = 8
-        AND status = 1
+        SELECT u.id, u.name
+        FROM users u
+        JOIN roles r ON u.role_id = r.id
+        WHERE r.name = 'Driver'
+        AND u.agency_id = ?
+        AND u.status = 1
+        ORDER BY u.name
     ");
 
     $stmt->execute([$agencyId]);

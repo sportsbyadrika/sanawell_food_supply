@@ -1,272 +1,308 @@
+
+<?php if (!empty($_SESSION['success'])): ?>
+<div id="flash-message" class="bg-green-100 text-green-700 px-4 py-2 rounded mb-4">
+    <?= $_SESSION['success']; unset($_SESSION['success']); ?>
+</div>
+<?php endif; ?>
+
+<?php if (!empty($_SESSION['info'])): ?>
+<div id="flash-message" class="bg-blue-100 text-blue-700 px-4 py-2 rounded mb-4">
+    <?= $_SESSION['info']; unset($_SESSION['info']); ?>
+</div>
+<?php endif; ?>
+
+<?php if (!empty($_SESSION['error'])): ?>
+<div id="flash-message" class="bg-red-100 text-red-700 px-4 py-2 rounded mb-4">
+    <?= $_SESSION['error']; unset($_SESSION['error']); ?>
+</div>
+<?php endif; ?>
 <?php
-$route_id = $_GET['id'] ?? 0;
- if (isset($_SESSION['info'])): ?>
-    <div id="flash-message" 
-         class="mb-4 rounded-lg bg-blue-100 text-blue-800 px-4 py-3 transition-opacity duration-500">
-        <?= $_SESSION['info']; ?>
-    </div>
-    <?php unset($_SESSION['info']); ?>
-<?php endif; ?>
-
-<?php if (isset($_SESSION['success'])): ?>
-    <div id="flash-message" 
-         class="mb-6 rounded-lg bg-green-100 text-green-800 px-4 py-3 transition-opacity duration-500">
-        <?= $_SESSION['success']; ?>
-    </div>
-    <?php unset($_SESSION['success']); ?>
-<?php endif; ?>
-<div class="max-w-6xl mx-auto px-6 py-8">
-
-    <!-- Page Header -->
-    <div class="flex items-center justify-between mb-8">
-        <div>
-            <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-    🚚 
-    <?= htmlspecialchars($route['name']) ?>
-    (<?= ucfirst($route['type']) ?>)
-    <span class="text-gray-600 text-lg font-normal">
-        - Today's Delivery
-    </span>
-</h2>
-
-<p class="text-gray-500 text-sm mt-1">
-    <?= htmlspecialchars($route['description'] ?? '') ?>
-</p>
-        </div>
-
-        <a href="index.php?route=route_configuration"
-           class="px-4 py-2 bg-gray-300 hover:bg-gray-300 rounded-lg text-sm font-medium">
-            Back to Routes
-        </a>
-    </div>
-
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white shadow rounded-xl p-6">
-            <p class="text-gray-500 text-sm">Total Orders</p>
-            <h2 class="text-2xl font-bold text-blue-600">
-                <?= count($deliveries) ?>
-            </h2>
-        </div>
-
-        <div class="bg-white shadow rounded-xl p-6">
-            <p class="text-gray-500 text-sm">Pending</p>
-            <h2 class="text-2xl font-bold text-yellow-500">
-                <?= $pendingCount ?>
-            </h2>
-        </div>
-
-        <div class="bg-white shadow rounded-xl p-6">
-            <p class="text-gray-500 text-sm">Delivered</p>
-            <h2 class="text-2xl font-bold text-green-600">
-                <?= $deliveredCount ?>
-            </h2>
-        </div>
-    </div>
- <?php
 $totalPackets = 0;
 $totalAddedPackets = 0;
 $totalCancelledPackets = 0;
 ?>
 
-<div class="flex flex-wrap gap-4">
+<div class="max-w-7xl mx-auto px-6 py-6">
 
-<?php foreach(($loadSummary ?? []) as $item): ?>
+<!-- HEADER -->
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h2 class="text-xl font-semibold">
+            🚚 <?= htmlspecialchars($route['name'] ?? 'Route') ?> - Today's Delivery
+        </h2>
+        <p class="text-sm text-gray-500">
+            <?= htmlspecialchars($route['description'] ?? '') ?>
+        </p>
+    </div>
+
+    <a href="index.php?route=route_configuration_manage&id=<?= $route['id'] ?>"
+       class="bg-gray-200 px-4 py-2 rounded-lg text-sm">
+        Back to Routes
+    </a>
+</div>
+
+<!-- TRIP CONTROLS -->
+<div class="bg-white shadow rounded-xl p-4 mb-6">
+<form method="POST" action="index.php?route=generate_delivery">
+
+<div class="flex items-center gap-4 flex-wrap">
+
+    <input type="hidden" name="route_id" value="<?= $route['id'] ?>">
+
+    <!-- TRIP DATE -->
+    <div>
+        <label class="text-s-bold text-gray-500">Trip Date</label>
+        <input type="date"
+               name="trip_date"
+               value="<?= date('Y-m-d') ?>"
+               class="border rounded px-3 py-2 text-sm">
+    </div>
+
+    <!-- TRIP START TIME -->
+   <div class="flex items-center gap-2 border rounded-lg px-3 py-2 bg-white shadow-sm">
+<label class="text-s-bold text-gray-500">Trip Start Time</label>
+    <span class="text-gray-400">⏰</span>
+
+    <select id="tripHour" class="outline-none bg-transparent">
+        <?php for($i=1;$i<=12;$i++): ?>
+            <option value="<?= $i ?>"><?= $i ?></option>
+        <?php endfor; ?>
+    </select>
+
+    :
+
+    <select id="tripMinute" class="outline-none bg-transparent">
+        <?php for($i=0;$i<60;$i++): ?>
+            <option value="<?= str_pad($i,2,'0',STR_PAD_LEFT) ?>">
+                <?= str_pad($i,2,'0',STR_PAD_LEFT) ?>
+            </option>
+        <?php endfor; ?>
+    </select>
+
+    <select id="tripAmPm" class="outline-none bg-transparent">
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+    </select>
+<input type="hidden" name="trip_start_time" id="tripStartTime">
+</div>
+    <!-- DRIVER -->
+    <div>
+        <label class="text-s-bold text-gray-500">Driver</label>
+        <select name="driver_id"
+                class="border rounded px-3 py-2 text-sm">
+
+            <option value="">Select Driver</option>
+
+            <?php foreach($drivers ?? [] as $driver): ?>
+
+                <option value="<?= $driver['id'] ?>">
+                    <?= htmlspecialchars($driver['name']) ?>
+                </option>
+
+            <?php endforeach; ?>
+
+        </select>
+    </div>
+
+    <!-- VEHICLE -->
+    <div>
+        <label class="text-s-bold text-gray-500">Vehicle</label>
+        <select name="vehicle_no" class="border rounded px-3 py-2 text-sm">
+<option value="">Select Vehicle</option>
+
+<?php foreach ($vehicles as $vehicle): ?>
+
+<option value="<?= $vehicle['vehicle_no']; ?>">
+<?= $vehicle['vehicle_no']; ?> - <?= $vehicle['vehicle_company']; ?>
+</option>
+
+<?php endforeach; ?>
+
+</select>
+    </div>
+
+    <div class="pt-5">
+            <button type="submit"
+            class="bg-gradient-to-br from-slate-600 via-blue-500 to-slate-600 text-white px-5 py-2 rounded-lg text-sm">
+            Generate Delivery
+        </button>
+            
+    </div>
+
+</div>
+
+</form>
+</div>
+
+<!-- MAIN GRID -->
+<div class="grid grid-cols-12 gap-6">
+
+<!-- LEFT SIDE : PRODUCT SUMMARY -->
+<div class="col-span-3">
+
+<div class="grid grid-cols-2 gap-3">
 
 <?php
-$productName = strtolower($item['name']);
+$cardColors = [
+"bg-blue-100 border-blue-300 text-blue-800",
+"bg-green-100 border-green-300 text-green-800",
+"bg-purple-100 border-purple-300 text-purple-800",
+"bg-orange-100 border-orange-300 text-orange-800",
+"bg-pink-100 border-pink-300 text-pink-800"
+];
 
-$colorClass = "bg-gray-100 border-gray-300 text-gray-700";
+$colorIndex = 0;
+?>
 
-if(str_contains($productName,"milk")){
-    $colorClass = "bg-blue-100 border-blue-300 text-blue-700";
-}
-elseif(str_contains($productName,"curd")){
-    $colorClass = "bg-green-100 border-green-300 text-green-700";
-}
+<?php foreach ($loadSummary ?? [] as $item): ?>
+
+<?php
+
+$colorClass = $cardColors[$colorIndex % count($cardColors)];
+$colorIndex++;
 
 $addedQty = $item['added_qty'] ?? 0;
 $cancelledQty = $item['cancelled_qty'] ?? 0;
 $totalQty = $item['total_qty'] ?? 0;
 
-$finalQty = $totalQty - $cancelledQty;
+$finalQty = $totalQty;
 
 $totalPackets += $finalQty;
 $totalAddedPackets += $addedQty;
 $totalCancelledPackets += $cancelledQty;
+
 ?>
 
-<div class="border rounded-lg px-5 py-3 min-w-[180px] <?= $colorClass ?>">
+<div class="border rounded-lg px-3 py-2 <?= $colorClass ?>">
 
-<div class="text-lg font-semibold text-green-600">
-<?= htmlspecialchars($item['name']) ?> (<?= htmlspecialchars($item['variant']) ?>)
-: <?= $finalQty ?>
+<div class="text-xs font-medium">
+<?= htmlspecialchars($item['name']) ?>
 </div>
 
-<?php if($addedQty > 0): ?>
-<div class="text-xs text-green-600">
-Added <?= $addedQty ?>
+<div class="text-[11px] opacity-70">
+<?= htmlspecialchars($item['variant']) ?>
 </div>
-<?php endif; ?>
 
-<?php if($cancelledQty > 0): ?>
-<div class="text-xs text-red-600">
-Cancelled <?= $cancelledQty ?>
+<div class="text-lg font-bold mt-1">
+<?= $finalQty ?>
 </div>
-<?php endif; ?>
 
 </div>
 
 <?php endforeach; ?>
 
-
-<!-- Added Packets Card -->
-
-<div class="border rounded-lg px-5 py-3 min-w-[180px] bg-green-100 border-green-300 text-green-700">
-
-<div class="text-xs uppercase font-semibold">
-Added Packets
+<!-- ADDED -->
+<div class="border rounded-lg px-3 py-2 bg-green-100">
+<div class="text-xs">ADDED PACKETS</div>
+<div class="text-lg font-bold"><?= $totalAddedPackets ?></div>
 </div>
 
-<div id="addedPackets" class="text-2xl font-bold">
-<?= $totalAddedPackets ?>
+<!-- CANCELLED -->
+<div class="border rounded-lg px-3 py-2 bg-red-100">
+<div class="text-xs">CANCELLED PACKETS</div>
+<div class="text-lg font-bold"><?= $totalCancelledPackets ?></div>
 </div>
 
-</div>
-
-
-<!-- Cancelled Packets Card -->
-
-<div class="border rounded-lg px-5 py-3 min-w-[180px] bg-red-100 border-red-300 text-red-700">
-
-<div class="text-xs uppercase font-semibold">
-Cancelled Packets
-</div>
-
-<div id="cancelledPackets" class="text-2xl font-bold">
-<?= $totalCancelledPackets ?>
-</div>
-</div>
-
-
-<!-- TOTAL CARD -->
-
-<div class="border rounded-lg px-5 py-3 min-w-[180px] bg-indigo-100 border-indigo-300 text-indigo-700">
-
-<div class="text-xs uppercase font-semibold">
-Total Packets
-</div>
-
-<div id="totalPackets" class="text-3xl font-bold">
-<?= $totalPackets ?>
-</div>
+<!-- TOTAL -->
+<div class="border rounded-lg px-3 py-2 bg-purple-100">
+<div class="text-xs">TOTAL PACKETS</div>
+<div class="text-lg font-bold"><?= $totalPackets ?></div>
 </div>
 
 </div>
-    <!-- Table -->
-  <div class="bg-white shadow rounded-xl overflow-hidden">
-<table class="min-w-full text-sm text-left">
+</div>
 
-<thead class="bg-gradient-to-br from-blue-500 to-slate-500 text-white">
+<!-- RIGHT SIDE : DELIVERY TABLE -->
+<div class="col-span-9">
+
+<div class="bg-white shadow rounded-xl overflow-hidden">
+
+<table class="w-full text-sm">
+
+<thead class="bg-gradient-to-br from-slate-600 via-blue-500 to-slate-600 text-white">
 <tr>
-<th class="px-6 py-3">Order No</th>
-<th class="px-6 py-3">Customer</th>
-<th class="px-6 py-3">Products(Qty)</th>
-<th class="px-6 py-3">Status</th>
+<th class="px-4 py-3 text-left">Order No</th>
+<th class="px-4 py-3 text-left">Customer</th>
+<th class="px-4 py-3 text-left">Mobile</th>
+<th class="px-4 py-3 text-left">Products (Qty)</th>
+<th class="px-4 py-3 text-left">Status</th>
 </tr>
 </thead>
 
-<tbody class="divide-y">
+<tbody>
 
-<?php if (empty($deliveries)) : ?>
-<tr>
-<td colspan="4" class="text-center py-6 text-gray-500">
-No deliveries generated for today
-</td>
-</tr>
-<?php endif; ?>
+<?php foreach ($deliveries ?? [] as $delivery): ?>
 
-<?php foreach ($deliveries as $delivery) : ?>
+<tr class="border-b">
 
-<tr class="hover:bg-gray-50">
-
-<td class="px-6 py-4 font-semibold text-blue-600">
+<td class="px-4 py-3">
 <?= $delivery['order_no'] ?>
 </td>
 
-<td class="px-6 py-4">
+<td class="px-4 py-3 font-medium">
 <?= htmlspecialchars($delivery['name']) ?>
 </td>
 
-<td class="px-6 py-4">
+<td class="px-4 py-3">
+<?= htmlspecialchars($delivery['mobile']) ?>
+</td>
+
+<td class="px-4 py-3">
 
 <?php
-$products = explode("||", $delivery['products']);
-
-foreach ($products as $prod) {
-
-$parts = explode("|", $prod);
-
-$name = $parts[0] ?? '';
-$qty = isset($parts[1]) ? (int)$parts[1] : 0;
-$itemId = isset($parts[2]) ? (int)$parts[2] : 0;
+$products = explode('||', $delivery['products']);
 ?>
 
-<div style="
-border:1px solid #c7d2fe;
-background:#eef2ff;
-border-radius:12px;
-padding:12px;
-max-width:320px;
-margin-bottom:8px;
-">
+<?php foreach ($products as $product): ?>
 
-<div style="
-font-weight:600;
-color:#2563eb;
-margin-bottom:8px;
-">
+<?php
+$parts = explode('|', $product);
 
-<?= htmlspecialchars($name) ?> 
+$name = $parts[0] ?? '';
+$variant = $parts[1] ?? '';
+$qtyParts = explode(',', $parts[2] ?? '');
+
+$normalQty = $qtyParts[0] ?? 0;
+$extraQty  = $qtyParts[1] ?? 0;
+$totalQty  = $qtyParts[2] ?? 0;
+?>
+
+<div class="bg-gray-100 rounded-lg px-3 py-2 mb-1 inline-block">
+
+<div class="text-xs font-medium text-blue-700">
+<?= htmlspecialchars($name) ?>
+(<?= htmlspecialchars($variant) ?>)
+</div>
+
+<div class="text-xs text-gray-500">
+<div class="text-xs text-gray-600">
+Normal : <?= $normalQty ?>
+</div>
+
+<?php if($extraQty > 0): ?>
+<div class="text-xs text-green-600">
+Extra : +<?= $extraQty ?>
+</div>
+<?php endif; ?>
+
+<div class="text-xs font-semibold">
+Total : <?= $totalQty ?>
+</div>
+</div>
 
 </div>
 
-<div style="display:flex;align-items:center;gap:10px">
-
-<button
-onclick="changeQty(<?= $itemId ?>,-1)"
-style="width:32px;height:32px;border-radius:6px;border:1px solid #22c55e;background:#dcfce7;font-weight:bold;">
--
-</button>
-
-<div id="qty-<?= $itemId ?>"
-style="font-size:20px;font-weight:700;width:35px;text-align:center">
-<?= $qty ?>
-</div>
-
-<button
-onclick="changeQty(<?= $itemId ?>,1)"
-style="width:32px;height:32px;border-radius:6px;border:1px solid #22c55e;background:#dcfce7;font-weight:bold;">
-+
-</button>
-
-<button
-onclick="cancelOrder(<?= $delivery['order_no'] ?>)"
-style="padding:6px 12px;border-radius:6px;border:1px solid #f59e0b;background:#fef3c7;">
-Cancel
-</button>
-
-</div>
-<?php } ?>
+<?php endforeach; ?>
 
 </td>
 
-<td class="px-6 py-4">
+<td class="px-4 py-3">
 
-<span class="px-3 py-1 rounded-full text-xs font-medium
-<?= $delivery['status']=='pending'
-? 'bg-yellow-100 text-yellow-700'
-: 'bg-green-100 text-green-700' ?>">
+<span class="px-3 py-1 text-xs rounded-full
+<?= $delivery['status'] === 'delivered'
+? 'bg-green-100 text-green-700'
+: 'bg-yellow-100 text-yellow-700'
+?>">
 
 <?= ucfirst($delivery['status']) ?>
 
@@ -279,73 +315,48 @@ Cancel
 <?php endforeach; ?>
 
 </tbody>
+
 </table>
+
 </div>
-    <script>
-    setTimeout(function () {
-        const flash = document.getElementById('flash-message');
-        if (flash) {
-            flash.style.opacity = '0';
-            setTimeout(() => flash.remove(), 500); 
-        }
-    }, 2500); 
+<script>
+setTimeout(function () {
+    const flash = document.getElementById('flash-message');
+    if (flash) {
+        flash.style.transition = "opacity 0.5s";
+        flash.style.opacity = "0";
+        setTimeout(() => flash.remove(), 500);
+    }
+}, 3000); // 3 seconds
 </script>
 <script>
-    header('Content-Type: application/json');
-function changeQty(id, change){
 
-let routeId = <?= $route['id'] ?>;
+function updateTripTime() {
 
-fetch("index.php?route=updateQty",{
-method:"POST",
-headers:{
-"Content-Type":"application/x-www-form-urlencoded"
-},
-body:"id="+id+"&change="+change+"&route_id="+routeId
-})
-.then(res=>res.json())
-.then(data=>{
+    let hour = document.getElementById("tripHour").value;
+    let minute = document.getElementById("tripMinute").value;
+    let ampm = document.getElementById("tripAmPm").value;
 
-document.getElementById("qty-"+id).innerText = data.qty;
+    hour = parseInt(hour);
 
-updateSummaryCards(data.summary);
+    if(ampm === "PM" && hour !== 12) hour += 12;
+    if(ampm === "AM" && hour === 12) hour = 0;
 
-});
+    hour = hour.toString().padStart(2,'0');
 
+    document.getElementById("tripStartTime").value = hour + ":" + minute;
 }
+
+document.querySelectorAll("#tripHour,#tripMinute,#tripAmPm")
+.forEach(el => el.addEventListener("change", updateTripTime));
+
+updateTripTime();
+
 </script>
-<script>
-    function updateSummaryCards(summary){
 
-let totalPackets = 0;
-let addedPackets = 0;
-let cancelledPackets = 0;
+</div>
 
-summary.forEach(item => {
+</div>
 
-let qty = parseInt(item.total_qty);
-let added = parseInt(item.added_qty || 0);
-let cancelled = parseInt(item.cancelled_qty || 0);
-
-totalPackets += qty;
-addedPackets += added;
-cancelledPackets += cancelled;
-
-let id = "product-" + item.name + item.variant;
-
-let el = document.getElementById(id);
-
-if(el){
-el.innerText = qty;
-}
-
-});
-
-document.getElementById("totalPackets").innerText = totalPackets;
-document.getElementById("addedPackets").innerText = addedPackets;
-document.getElementById("cancelledPackets").innerText = cancelledPackets;
-
-}
-</script>
 
 </div>

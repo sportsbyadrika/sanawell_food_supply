@@ -56,8 +56,10 @@ $routes = [
     'dashboard' => [DashboardController::class, 'index'],
     // DRIVER
 'driver_dashboard' => [DriverDashboardController::class, 'index'],
-'driver_start_delivery'=>[ DriverDeliveryController::class,'start'],
-'driver_delivery'=>[ DriverDeliveryController::class,'view'],
+'driver_start_delivery' => [DriverDeliveryController::class, 'start'],
+'driver_delivery' => [DriverDeliveryController::class, 'view'],
+'driver_mark_delivered' => [DriverDeliveryController::class, 'markDelivered'],
+'driver_save_not_delivered' => [DriverDeliveryController::class, 'saveNotDelivered'],
 
     'product_rates' => [ProductRateController::class, 'manage'],
     'product_rate_store' => [ProductRateController::class, 'store'],
@@ -98,11 +100,18 @@ $routes = [
 
 'updateQty' => [RouteConfigurationController::class, 'updateQty'],
 'cancel_order' => [RouteConfigurationController::class, 'cancelOrder'],
-'driver_mark_delivered' => ['DriverController','markDelivered'],
-'driver_not_delivered' => ['DriverController','notDeliveredForm'],
-'driver_save_not_delivered' => ['DriverController','saveNotDelivered'],
+
 'delivery_report' => [ReportController::class, 'deliveryreport'],
 'generate_monthly_bill'=>[ReportController::class,'generateMonthlyBill'],
+'change_request'=>[ChangeRequestController::class,'index'],
+'change_request_store'=>[ChangeRequestController::class,'store'],
+'change_request_cancel'=>[ChangeRequestController::class,'cancel'],
+'vehicles'=>[VehicleController::class,'index'],
+'vehicle_create'=>[VehicleController::class,'create'],
+'vehicle_store'=>[VehicleController::class,'store'],
+
+
+
 
 ];
 

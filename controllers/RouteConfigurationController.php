@@ -132,23 +132,47 @@ public function generateDelivery()
 {
     Auth::requireAgencyAdmin();
 
-    $route_id = $_GET['id'] ?? null;
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header("Location: index.php?route=dashboard");
+        exit;
+    }
+
+    $route_id = $_POST['route_id'] ?? null;
+    $driver_id = $_POST['driver_id'] ?? null;
+    $vehicle_no = $_POST['vehicle_no'] ?? null;
+    $trip_date = $_POST['trip_date'] ?? null;
+    $trip_start_time = $_POST['trip_start_time'] ?? null;
 
     if (!$route_id) {
         die("Route not found");
     }
 
+    if (!$driver_id || !$vehicle_no || !$trip_start_time) {
+        $_SESSION['error'] = "Please select Driver, Vehicle and Trip Start Time.";
+        header("Location: index.php?route=today_delivery_view&id=".$route_id);
+        exit;
+    }
+
     $deliveryModel = new DeliveryModel();
 
+    // prevent duplicate delivery
     if ($deliveryModel->deliveryExistsToday($route_id)) {
         $_SESSION['info'] = "Today's delivery already generated.";
         header("Location: index.php?route=today_delivery_view&id=".$route_id);
         exit;
     }
 
-    $deliveryModel->generateDeliveryForRoute($route_id);
+    // generate delivery
+    $deliveryModel->generateDeliveryForRoute(
+        $route_id,
+        $driver_id,
+        $vehicle_no,
+        $trip_date,
+        $trip_start_time
+    );
 
     $_SESSION['success'] = "Today's delivery generated successfully.";
+
     header("Location: index.php?route=today_delivery_view&id=".$route_id);
     exit;
 }
@@ -164,34 +188,52 @@ public function todayDeliveryView()
     }
 
     $routeModel = new Route();
+    $userModel = new User();
+
+    $agencyId = $_SESSION['user']['agency_id'] ?? null;
+
+    $vehicleModel = new VehicleModel();
+    $vehicles = $vehicleModel->getVehicles();
+
+    $drivers = $userModel->getDriversByAgency($agencyId);
+
     $route = $routeModel->find($routeId);
 
     if (!$route) {
         die("Invalid route");
     }
 
-    // ✅ Check if route has customers
+    // check customers
     $customers = $routeModel->getCustomersByRoute($routeId);
 
     if (empty($customers)) {
         $_SESSION['error'] = "No customers assigned to this route.";
-        header("Location: index.php?route=route_configuration_manage&id=" . $routeId);
+        header("Location: index.php?route=route_configuration_manage&id=".$routeId);
         exit;
     }
 
     $deliveryModel = new DeliveryModel();
+
     $loadSummary = $deliveryModel->getDeliveryLoadSummary($routeId);
+$addedPackets = 0;
+$cancelledPackets = 0;
+$totalPackets = 0;
 
-    if (!$deliveryModel->deliveryExistsToday($routeId)) {
-        $deliveryModel->generateDeliveryForRoute($routeId);
-    }
+foreach ($loadSummary as $row) {
 
+    $addedPackets += max(0, $row['added_qty']);
+
+    $cancelledPackets += max(0, $row['cancelled_qty']);
+
+    $totalPackets += $row['total_qty'];
+}
     $deliveries = $deliveryModel->getTodayDeliveries($routeId);
 
     $pendingCount = 0;
     $deliveredCount = 0;
 
     foreach ($deliveries as $delivery) {
+
         if ($delivery['status'] === 'pending') {
             $pendingCount++;
         } elseif ($delivery['status'] === 'delivered') {
@@ -199,16 +241,19 @@ public function todayDeliveryView()
         }
     }
 
-  $this->render('agency/routes/today_delivery_view', [
+    $this->render('agency/routes/today_delivery_view', [
     'route' => $route,
     'deliveries' => $deliveries,
     'pendingCount' => $pendingCount,
     'deliveredCount' => $deliveredCount,
-    'loadSummary' => $loadSummary
+    'loadSummary' => $loadSummary,
+    'addedPackets' => $addedPackets,
+    'cancelledPackets' => $cancelledPackets,
+    'totalPackets' => $totalPackets,
+    'drivers' => $drivers,
+    'vehicles' => $vehicles
 ]);
 }
-
-
 public function updateQty()
 {
     header('Content-Type: application/json');

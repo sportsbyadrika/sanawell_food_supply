@@ -1,5 +1,4 @@
 <?php
-
 class DriverDeliveryController extends BaseController
 {
     public function start()
@@ -24,53 +23,55 @@ class DriverDeliveryController extends BaseController
         exit;
     }
 
-    public function view()
-    {
-        Auth::requireDriver();
+public function view()
+{
+    $route_id = $_GET['route_id'] ?? null;
 
-        $routeId = $_GET['route_id'] ?? null;
+    $model = new DeliveryModel();
 
-        $deliveryModel = new DeliveryModel();
-        $deliveries = $deliveryModel->getDeliveriesByRoute($routeId);
+    $deliveries = $model->getDeliveriesByRoute($route_id);
 
-        $this->render('agency/driver/driver_delivery_view', [
-            'deliveries' => $deliveries
-        ]);
+    $this->render('agency/driver/driver_delivery_view', [
+        'deliveries' => $deliveries,
+        'route_id' => $route_id
+    ]);
+}
+
+public function markDelivered()
+{
+    $id = $_GET['id'] ?? null;
+
+    if (!$id) {
+        return;
     }
 
-   public function markDelivered()
-{
-Auth::requireDriver();
+    $model = new DeliveryModel();
 
-$id = $_GET['id'];
+    $model->markAsDelivered($id);
 
-$model = new DeliveryModel();
-$model->updateStatus($id,'delivered');
+    $routeId = $model->getRouteIdByOrder($id);
 
-header("Location:index.php?route=driver_delivery&route_id=".$_GET['route_id']);
+    header("Location:index.php?route=driver_delivery&route_id=".$routeId);
+    exit;
 }
-
-public function notDeliveredForm()
-{
-Auth::requireDriver();
-
-$id = $_GET['id'];
-
-require '../views/driver/not_delivered.php';
-}
-
 public function saveNotDelivered()
 {
-Auth::requireDriver();
+    Auth::requireDriver();
 
-$id = $_POST['delivery_id'];
-$reason = $_POST['reason'];
-$remarks = $_POST['remarks'];
+    $id      = $_POST['order_id'] ?? null;
+    $reason  = $_POST['reason'] ?? '';
+    $remarks = $_POST['remarks'] ?? '';
+    $routeId = $_POST['route_id'] ?? null;
 
-$model = new DeliveryModel();
+    if(!$id){
+        header("Location: index.php?route=driver_delivery&route_id=".$routeId);
+        exit;
+    }
 
-$model->markNotDelivered($id,$reason,$remarks);
+    $model = new DeliveryModel();
+    $model->markNotDelivered($id,$reason,$remarks);
 
-header("Location:index.php?route=driver_dashboard");
+    header("Location: index.php?route=driver_delivery&route_id=".$routeId);
+    exit;
 }
 }

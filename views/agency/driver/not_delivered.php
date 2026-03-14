@@ -1,6 +1,7 @@
 <form method="post" action="index.php?route=driver_save_not_delivered">
 
-<input type="hidden" name="delivery_id" value="<?=$id?>">
+<input type="hidden" name="delivery_id" value="<?= $id ?>">
+<input type="hidden" name="route_id" value="<?= $_GET['route_id'] ?>">
 
 <label>Reason</label>
 

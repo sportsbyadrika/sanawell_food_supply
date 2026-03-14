@@ -35,21 +35,34 @@ class DriverDashboardController extends BaseController
     // NEW PRODUCT TOTALS
     $milk = 0;
 $curd = 0;
+$route['products'] = [];
 
 $products = $deliveryModel->getRouteProductTotals($route['id']);
 
 foreach ($products as $p) {
 
- $productName = $p['product_name'] . ' (' . $p['variant'] . ')';
-$route['products'][$productName] = $p['qty'];
+    $productName = $p['product_name'] . ' (' . $p['variant'] . ')';
+
+    $normal = $p['normal_qty'] ?? 0;
+    $added = $p['added_qty'] ?? 0;
+    $cancelled = $p['cancelled_qty'] ?? 0;
+
+    $total = $normal + $added - $cancelled;
+
+    $route['products'][$productName] = [
+        'normal' => $normal,
+        'added' => $added,
+        'cancelled' => $cancelled
+    ];
+
     $name = strtolower($p['product_name']);
 
     if (strpos($name, 'milk') !== false) {
-        $milk += $p['qty'];
+        $milk += $total;
     }
 
     if (strpos($name, 'curd') !== false) {
-        $curd += $p['qty'];
+        $curd += $total;
     }
 }
 
