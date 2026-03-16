@@ -18,7 +18,15 @@ class ReportController extends BaseController
     if ($from && $to) {
 
         // First fetch summary & bills
-        $summary = $model->getDeliverySummary($from, $to);
+      $route_id = $_GET['route_id'] ?? null;
+
+$deliveryModel = new DeliveryModel();
+
+$summary = $deliveryModel->getDeliverySummary(
+    $route_id,
+    $from_date,
+    $to_date
+);
         $bills   = $model->getBillsBetweenDates($from, $to);
 
         // Then build details map
@@ -42,40 +50,47 @@ class ReportController extends BaseController
 
 public function generateMonthlyBill()
 {
-    $from = $_POST['from_date'] ?? null;
-    $to   = $_POST['to_date'] ?? null;
+    $route_id = $_POST['route_id'];
+    $from_date = $_POST['from_date'];
+    $to_date = $_POST['to_date'];
 
-    if (!$from || !$to) {
-        header("Location: index.php?route=delivery_report");
-        exit;
-    }
+    $deliveryModel = new DeliveryModel();
+    $billModel = new BillModel();
 
-    $model = new DeliveryModel($this->db);
+    // Get delivery summary
+    $customers = $deliveryModel->getDeliverySummary($route_id, $from_date, $to_date);
 
-    $customerTotals = $model->getCustomerTotalsForPeriod($from, $to);
+    foreach ($customers as $customer) {
 
-    foreach ($customerTotals as $row) {
+        // Create bill
+        $bill_id = $billModel->createBill([
+            'customer_id' => $customer['customer_id'],
+            'route_id' => $route_id,
+            'bill_from_date' => $from_date,
+            'bill_to_date' => $to_date,
+            'total_amount' => $customer['total_amount'],
+            'status' => 'BILL GENERATED'
+        ]);
 
-        $customerId = $row['customer_id'];
-        $totalAmount = $row['total_amount'];
-
-        // Insert into bills
-        $billId = $model->insertBill($customerId, $totalAmount);
-
-        // Insert bill items
-        $items = $model->getCustomerItemsForPeriod($customerId, $from, $to);
+        // Get product summary
+        $items = $deliveryModel->getCustomerProducts(
+            $customer['customer_id'],
+            $from_date,
+            $to_date
+        );
 
         foreach ($items as $item) {
-            $model->insertBillItem(
-                $billId,
-                $item['product_id'],
-                $item['quantity'],
-                $item['price'],
-                $item['total']
-            );
+
+            $billModel->addBillItem([
+                'bill_id' => $bill_id,
+                'product_id' => $item['product_id'],
+                'qty' => $item['qty'],
+                'rate' => $item['rate'],
+                'amount' => $item['amount']
+            ]);
         }
     }
 
-    header("Location: index.php?route=delivery_report&from_date=$from&to_date=$to");
+    header("Location:index.php?route=delivery_report");
 }
 }

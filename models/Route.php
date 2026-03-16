@@ -150,20 +150,18 @@ public function getCustomersByRoute($routeId)
 // Auto sync route customers
 $sync = $this->db->prepare("
 INSERT INTO route_customers (route_id, customer_id, delivery_order, created_at)
-SELECT 
+SELECT
     cp.route_id,
     cp.customer_id,
-    IFNULL(MAX(rc.delivery_order),0) + 1,
+    ROW_NUMBER() OVER (ORDER BY cp.customer_id),
     NOW()
 FROM customer_products cp
-LEFT JOIN route_customers rc 
-    ON rc.customer_id = cp.customer_id 
+LEFT JOIN route_customers rc
+    ON rc.customer_id = cp.customer_id
     AND rc.route_id = cp.route_id
 WHERE cp.route_id = ?
 AND cp.status = 1
-AND rc.id IS NULL
-GROUP BY cp.customer_id
-");
+AND rc.id IS NULL");
 
 $sync->execute([$routeId]);
     $stmt = $this->db->prepare("

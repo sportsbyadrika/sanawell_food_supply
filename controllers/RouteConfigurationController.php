@@ -64,8 +64,8 @@ public function updateRouteOrder()
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $customerId = $_POST['customer_id'] ?? null;
-        $newOrder = (int)($_POST['new_order'] ?? 0);
-        $routeId = $_POST['route_id'] ?? $_GET['id'] ?? null;
+        $newOrder   = (int)($_POST['new_order'] ?? 0);
+        $routeId    = $_POST['route_id'] ?? $_GET['id'] ?? null;
 
         if (!$customerId || !$newOrder || !$routeId) {
             die("Invalid request");
@@ -73,60 +73,107 @@ public function updateRouteOrder()
 
         $db = Database::connection();
 
-        
+        // Get current order
         $stmt = $db->prepare("
             SELECT delivery_order 
-            FROM route_customers 
+            FROM route_customers
             WHERE route_id = ? AND customer_id = ?
         ");
 
         $stmt->execute([$routeId, $customerId]);
-        $current = $stmt->fetchColumn();
+        $current = (int)$stmt->fetchColumn();
 
         if (!$current) {
-            die("Customer not found in route");
+            die("Customer not found");
         }
 
-        
-        if ($newOrder > $current) {
+        $db->beginTransaction();
 
-            $shift = $db->prepare("
+        try {
+
+            // Step 1: move selected customer temporarily
+            $temp = $db->prepare("
                 UPDATE route_customers
-                SET delivery_order = delivery_order - 1
-                WHERE route_id = ?
-                AND delivery_order > ?
-                AND delivery_order <= ?
+                SET delivery_order = 0
+                WHERE route_id = ? AND customer_id = ?
+            ");
+            $temp->execute([$routeId, $customerId]);
+
+            // Step 2: shift other customers
+            if ($newOrder < $current) {
+
+                $shift = $db->prepare("
+                    UPDATE route_customers
+                    SET delivery_order = delivery_order + 1
+                    WHERE route_id = ?
+                    AND delivery_order >= ?
+                    AND delivery_order < ?
+                ");
+
+                $shift->execute([$routeId, $newOrder, $current]);
+
+            } elseif ($newOrder > $current) {
+
+                $shift = $db->prepare("
+                    UPDATE route_customers
+                    SET delivery_order = delivery_order - 1
+                    WHERE route_id = ?
+                    AND delivery_order > ?
+                    AND delivery_order <= ?
+                ");
+
+                $shift->execute([$routeId, $current, $newOrder]);
+            }
+
+            // Step 3: set new position
+            $update = $db->prepare("
+                UPDATE route_customers
+                SET delivery_order = ?
+                WHERE route_id = ? AND customer_id = ?
             ");
 
-            $shift->execute([$routeId, $current, $newOrder]);
+            $update->execute([$newOrder, $routeId, $customerId]);
+
+            $db->commit();
+
+        } catch (Exception $e) {
+
+            $db->rollBack();
+            die($e->getMessage());
         }
-
-        
-        if ($newOrder < $current) {
-
-            $shift = $db->prepare("
-                UPDATE route_customers
-                SET delivery_order = delivery_order + 1
-                WHERE route_id = ?
-                AND delivery_order >= ?
-                AND delivery_order < ?
-            ");
-
-            $shift->execute([$routeId, $newOrder, $current]);
-        }
-
-        
-        $update = $db->prepare("
-            UPDATE route_customers
-            SET delivery_order = ?
-            WHERE route_id = ? AND customer_id = ?
-        ");
-
-        $update->execute([$newOrder, $routeId, $customerId]);
 
         header("Location: index.php?route=route_configuration_manage&id=".$routeId);
         exit;
     }
+}
+
+public function updateRouteOrderDrag()
+{
+
+$data = json_decode(file_get_contents("php://input"), true);
+
+$routeId = $data['route_id'];
+$orders = $data['orders'];
+
+$db = Database::connection();
+
+foreach ($orders as $row) {
+
+$stmt = $db->prepare("
+UPDATE route_customers
+SET delivery_order = ?
+WHERE route_id = ? AND customer_id = ?
+");
+
+$stmt->execute([
+$row['order'],
+$routeId,
+$row['customer_id']
+]);
+
+}
+
+echo json_encode(["status"=>"success"]);
 }
 public function generateDelivery()
 {

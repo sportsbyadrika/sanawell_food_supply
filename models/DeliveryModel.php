@@ -371,28 +371,6 @@ public function getRouteIdByOrder($orderId)
     return $stmt->fetchColumn();
 }
 
-public function getDeliverySummary($from, $to)
-{
-    $stmt = $this->db->prepare("
-        SELECT 
-            do.delivery_date,
-            do.route_id,
-            r.name as route_name,
-            COUNT(DISTINCT do.customer_id) as total_customers,
-            SUM(doi.quantity) as total_quantity
-        FROM delivery_orders do
-        JOIN delivery_order_items doi 
-            ON doi.delivery_order_id = do.id
-        JOIN routes r 
-            ON r.id = do.route_id
-        WHERE do.delivery_date BETWEEN ? AND ?
-        GROUP BY do.delivery_date, do.route_id
-        ORDER BY do.delivery_date DESC
-    ");
-
-    $stmt->execute([$from, $to]);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
 
 public function getDeliveryDetailsByDate($date)
 {
@@ -668,5 +646,54 @@ public function getQty($id)
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
     return $row ? (int)$row['qty'] : 0;
+}
+public function getDeliverySummary($route_id,$from,$to)
+{
+
+$sql = "
+
+SELECT 
+delivery_orders.customer_id,
+SUM(delivery_order_items.total_price) as total_amount
+
+FROM delivery_orders
+
+JOIN delivery_order_items 
+ON delivery_orders.id = delivery_order_items.delivery_order_id
+
+WHERE delivery_orders.route_id = ?
+AND delivery_orders.delivery_date BETWEEN ? AND ?
+
+GROUP BY delivery_orders.customer_id
+";
+
+return $this->db->query($sql,[$route_id,$from,$to])->fetchAll();
+}
+
+public function getCustomerProducts($customer_id,$from,$to)
+{
+
+$sql="
+
+SELECT 
+product_id,
+SUM(quantity) qty,
+rate,
+SUM(total_price) amount
+
+FROM delivery_order_items
+
+JOIN delivery_orders
+ON delivery_orders.id = delivery_order_items.delivery_order_id
+
+WHERE delivery_orders.customer_id = ?
+AND delivery_orders.delivery_date BETWEEN ? AND ?
+
+GROUP BY product_id
+
+";
+
+return $this->db->query($sql,[$customer_id,$from,$to])->fetchAll();
+
 }
 }
