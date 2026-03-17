@@ -40,18 +40,7 @@ class DeliveryModel
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function getOrderItems($order_id) {
-
-        $sql = "SELECT p.product_name, oi.quantity
-                FROM delivery_order_items oi
-                JOIN products p ON p.id = oi.product_id
-                WHERE oi.delivery_order_id = ?";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$order_id]);
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+   
 
     public function updateDelivery($id, $status, $reason) {
 
@@ -370,134 +359,6 @@ public function getRouteIdByOrder($orderId)
     $stmt->execute([$orderId]);
     return $stmt->fetchColumn();
 }
-
-
-public function getDeliveryDetailsByDate($date)
-{
-    $stmt = $this->db->prepare("
-        SELECT 
-            do.delivery_date,
-            c.name as customer_name,
-            p.name as product_name,
-            p.variant,
-            doi.quantity
-        FROM delivery_orders do
-        JOIN delivery_order_items doi 
-            ON doi.delivery_order_id = do.id
-        JOIN customers c 
-            ON c.id = do.customer_id
-        JOIN products p 
-            ON p.id = doi.product_id
-        WHERE do.delivery_date = ?
-        ORDER BY c.name
-    ");
-
-    $stmt->execute([$date]);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
-public function getBillsBetweenDates($from, $to)
-{
-    $sql = "SELECT 
-                b.bill_date,
-                c.name AS customer_name,
-                b.total_amount,
-                b.status
-            FROM bills b
-            JOIN customers c ON c.id = b.customer_id
-            WHERE b.bill_date BETWEEN ? AND ?
-            ORDER BY b.bill_date DESC";
-
-    $stmt = $this->db->prepare($sql);
-    $stmt->execute([$from, $to]);
-
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
-public function getDeliveryDetailsByDateAndRoute($date, $route_id)
-{
-    $stmt = $this->db->prepare("
-        SELECT 
-            c.name AS customer_name,
-            p.name AS product_name,
-            p.variant,
-            doi.quantity
-        FROM delivery_orders do
-        JOIN delivery_order_items doi ON doi.delivery_order_id = do.id
-        JOIN customers c ON c.id = do.customer_id
-        JOIN products p ON p.id = doi.product_id
-        WHERE do.delivery_date = ?
-        AND do.route_id = ?
-        ORDER BY c.name
-    ");
-
-    $stmt->execute([$date, $route_id]);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-public function getCustomerTotalsForPeriod($from, $to)
-{
-    $sql = "
-        SELECT 
-            d.customer_id,
-            SUM(doi.total) as total_amount
-        FROM deliveries d
-        JOIN delivery_orders do ON do.delivery_id = d.id
-        JOIN delivery_order_items doi ON doi.delivery_order_id = do.id
-        WHERE d.delivery_date BETWEEN ? AND ?
-        GROUP BY d.customer_id
-    ";
-
-    $stmt = $this->db->prepare($sql);
-    $stmt->execute([$from, $to]);
-
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
-public function insertBill($customerId, $totalAmount)
-{
-    $stmt = $this->db->prepare("
-        INSERT INTO bills (customer_id, bill_date, total_amount, status, created_at)
-        VALUES (?, CURDATE(), ?, 'pending', NOW())
-    ");
-
-    $stmt->execute([$customerId, $totalAmount]);
-
-    return $this->db->lastInsertId();
-}
-
-public function getCustomerItemsForPeriod($customerId, $from, $to)
-{
-    $sql = "
-        SELECT 
-            doi.product_id,
-            SUM(doi.quantity) as quantity,
-            doi.price,
-            SUM(doi.total) as total
-        FROM deliveries d
-        JOIN delivery_orders do ON do.delivery_id = d.id
-        JOIN delivery_order_items doi ON doi.delivery_order_id = do.id
-        WHERE d.customer_id = ?
-        AND d.delivery_date BETWEEN ? AND ?
-        GROUP BY doi.product_id
-    ";
-
-    $stmt = $this->db->prepare($sql);
-    $stmt->execute([$customerId, $from, $to]);
-
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
-public function insertBillItem($billId, $productId, $qty, $price, $total)
-{
-    $stmt = $this->db->prepare("
-        INSERT INTO bill_items (bill_id, product_id, quantity, price, total)
-        VALUES (?, ?, ?, ?, ?)
-    ");
-
-   
-    $stmt->execute([$billId, $productId, $qty, $price, $total]);
-}
-
 public function getRouteWithTodayDelivery()
 {
     $sql = "
@@ -546,19 +407,6 @@ SUM(CASE WHEN doi.added_qty < 0 THEN ABS(doi.added_qty) ELSE 0 END) as cancelled
     $stmt->execute([$routeId]);
 
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
-public function updateStatus($delivery_id,$status)
-{
-
-$stmt = $this->db->prepare("
-UPDATE delivery_orders
-SET status=?, delivered_at=NOW()
-WHERE id=?
-");
-
-$stmt->execute([$status,$delivery_id]);
-
 }
 
 public function markNotDelivered($orderId,$reason)
@@ -647,28 +495,6 @@ public function getQty($id)
 
     return $row ? (int)$row['qty'] : 0;
 }
-public function getDeliverySummary($route_id,$from,$to)
-{
-
-$sql = "
-
-SELECT 
-delivery_orders.customer_id,
-SUM(delivery_order_items.total_price) as total_amount
-
-FROM delivery_orders
-
-JOIN delivery_order_items 
-ON delivery_orders.id = delivery_order_items.delivery_order_id
-
-WHERE delivery_orders.route_id = ?
-AND delivery_orders.delivery_date BETWEEN ? AND ?
-
-GROUP BY delivery_orders.customer_id
-";
-
-return $this->db->query($sql,[$route_id,$from,$to])->fetchAll();
-}
 
 public function getCustomerProducts($customer_id,$from,$to)
 {
@@ -695,5 +521,64 @@ GROUP BY product_id
 
 return $this->db->query($sql,[$customer_id,$from,$to])->fetchAll();
 
+}
+
+public function updateOrderStatus($order_id, $status)
+{
+    $stmt = $this->db->prepare("
+        UPDATE delivery_orders 
+        SET status = ? 
+        WHERE id = ?
+    ");
+    $stmt->execute([$status, $order_id]);
+}
+
+public function updateStatus($order_id, $status, $reason = null, $remarks = null)
+{
+    $stmt = $this->db->prepare("
+        UPDATE delivery_orders 
+        SET status = ?, cancel_reason = ?, remarks = ?
+        WHERE id = ?
+    ");
+    $stmt->execute([$status, $reason, $remarks, $order_id]);
+}
+
+public function getOrderItems($order_id)
+{
+    $stmt = $this->db->prepare("
+        SELECT product_id, quantity, rate, total_amount
+        FROM delivery_order_items
+        WHERE delivery_order_id = ?
+    ");
+    $stmt->execute([$order_id]);
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+public function insertDailyBill($data)
+{
+    $stmt = $this->db->prepare("
+        INSERT INTO daily_delivery_bill
+        (delivery_order_id, product_id, qty, amount, status)
+        VALUES (?,?,?,?,?)
+    ");
+
+    $stmt->execute([
+        $data['delivery_order_id'],
+        $data['product_id'],
+        $data['qty'],
+        $data['amount'],
+        $data['status']
+    ]);
+}
+public function checkBillExists($order_id)
+{
+    $stmt = $this->db->prepare("
+        SELECT COUNT(*) FROM daily_delivery_bill 
+        WHERE delivery_order_id = ?
+    ");
+    $stmt->execute([$order_id]);
+
+    return $stmt->fetchColumn() > 0;
 }
 }

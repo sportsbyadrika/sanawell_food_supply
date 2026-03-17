@@ -99,20 +99,20 @@ class="text-blue-600 text-sm">
 
 <div class="flex gap-2 mt-3">
 
-<a 
-class="flex-1 text-center bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg text-sm font-medium"
-href="index.php?route=driver_mark_delivered&id=<?=$delivery['id']?>">
-Delivered
-</a>
+<form method="POST" action="index.php?route=update_delivery_status" class="flex-1">
+    <input type="hidden" name="order_id" value="<?= $delivery['id'] ?>">
+    <input type="hidden" name="route_id" value="<?= $route_id ?>">
 
-<button
-onclick="openReasonModal(<?= $delivery['id'] ?>)"
-class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg text-sm font-medium">
-
-Not Delivered
-
+    <button type="submit"
+        class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg">
+        Delivered
+    </button>
+</form>
+<button 
+    onclick="openReasonModal(<?= $delivery['id'] ?>)"
+    class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg">
+    Not Delivered
 </button>
-
 </div>
 
 </div>

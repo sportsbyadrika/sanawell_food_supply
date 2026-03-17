@@ -103,12 +103,16 @@ $routes = [
 
 'delivery_report' => [ReportController::class, 'deliveryreport'],
 'generate_monthly_bill'=>[ReportController::class,'generateMonthlyBill'],
+'generate_bill_page' => [BillController::class, 'generateBillPage'],
+'generate_bill' => [BillController::class, 'generateBill'],
+'bill_list' => [BillController::class, 'billList'],
 'change_request'=>[ChangeRequestController::class,'index'],
 'change_request_store'=>[ChangeRequestController::class,'store'],
 'change_request_cancel'=>[ChangeRequestController::class,'cancel'],
 'vehicles'=>[VehicleController::class,'index'],
 'vehicle_create'=>[VehicleController::class,'create'],
 'vehicle_store'=>[VehicleController::class,'store'],
+'update_delivery_status' => [DriverDeliveryController::class, 'updateStatus'],
 
 
 

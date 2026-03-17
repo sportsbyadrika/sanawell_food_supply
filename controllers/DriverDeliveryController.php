@@ -56,22 +56,65 @@ public function markDelivered()
 }
 public function saveNotDelivered()
 {
-    Auth::requireDriver();
+    $order_id = $_POST['order_id'];
+    $route_id = $_POST['route_id'];
+    $reason = $_POST['reason'];
+    $remarks = $_POST['remarks'];
 
-    $id      = $_POST['order_id'] ?? null;
-    $reason  = $_POST['reason'] ?? '';
-    $remarks = $_POST['remarks'] ?? '';
-    $routeId = $_POST['route_id'] ?? null;
+    $deliveryModel = new DeliveryModel();
 
-    if(!$id){
-        header("Location: index.php?route=driver_delivery&route_id=".$routeId);
-        exit;
+    // 1. Update status
+    $deliveryModel->updateStatus($order_id, 'cancelled', $reason, $remarks);
+
+    // 2. Insert into daily bill (IMPORTANT)
+    if (!$deliveryModel->checkBillExists($order_id)) {
+
+        $items = $deliveryModel->getOrderItems($order_id);
+
+        foreach ($items as $item) {
+            $deliveryModel->insertDailyBill([
+                'delivery_order_id' => $order_id,
+                'product_id' => $item['product_id'],
+                'qty' => 0, // ❗ cancelled
+                'amount' => 0,
+                'status' => 'cancelled'
+            ]);
+        }
     }
 
-    $model = new DeliveryModel();
-    $model->markNotDelivered($id,$reason,$remarks);
+    // 3. Redirect back
+    header("Location: index.php?route=driver_delivery&route_id=" . $route_id);
+    exit;
+}
 
-    header("Location: index.php?route=driver_delivery&route_id=".$routeId);
+public function updateStatus()
+{
+    $order_id = $_POST['order_id'];
+    $route_id = $_POST['route_id'];
+
+    $deliveryModel = new DeliveryModel();
+
+    // 1. Update status
+    $deliveryModel->updateStatus($order_id, 'delivered');
+
+    // 2. Prevent duplicate bill
+    if (!$deliveryModel->checkBillExists($order_id)) {
+
+        $items = $deliveryModel->getOrderItems($order_id);
+
+        foreach ($items as $item) {
+            $deliveryModel->insertDailyBill([
+                'delivery_order_id' => $order_id,
+                'product_id' => $item['product_id'],
+                'qty' => $item['quantity'],
+                'amount' => $item['total_amount'],
+                'status' => 'delivered'
+            ]);
+        }
+    }
+
+    // 3. Redirect back
+    header("Location: index.php?route=driver_delivery&route_id=" . $route_id);
     exit;
 }
 }

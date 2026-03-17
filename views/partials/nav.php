@@ -1,6 +1,22 @@
 <?php
 $config = require __DIR__ . '/../../config/config.php';
 $user = $_SESSION['user'] ?? null;
+
+/* ✅ FIX: Convert role_id → role slug */
+$rolesConfig = $config['roles'];
+
+function getRoleSlug($roleId, $rolesConfig) {
+    foreach ($rolesConfig as $role) {
+        if ($role['id'] == $roleId) {
+            return $role['slug'];
+        }
+    }
+    return null;
+}
+
+$role = isset($user['role_id'])
+    ? getRoleSlug($user['role_id'], $rolesConfig)
+    : ($user['role'] ?? null);
 ?>
 
 <header class="sticky top-0 z-50 bg-gradient-to-r from-blue-500 to-slate-500">
@@ -8,42 +24,42 @@ $user = $_SESSION['user'] ?? null;
 
 <!-- LOGO -->
 <div class="flex items-center gap-3">
-
-<div class="h-9 w-9 rounded-xl
-bg-gradient-to-br from-slate-600 via-blue-500 to-slate-600
-flex items-center justify-center
-shadow-lg ring-1 ring-white/30">
-
-<span class="text-white font-bold text-sm tracking-wide">SW</span>
-
+    <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-slate-600 via-blue-500 to-slate-600 flex items-center justify-center shadow-lg ring-1 ring-white/30">
+        <span class="text-white font-bold text-sm tracking-wide">SW</span>
+    </div>
+    <div class="leading-tight">
+        <p class="text-sm font-semibold text-white">Sanawell Product Delivery</p>
+        <p class="text-xs text-white/90">SaaS Delivery Management</p>
+    </div>
 </div>
-
-<div class="leading-tight">
-<p class="text-sm font-semibold text-white">SanaWell Product Delivery</p>
-<p class="text-xs text-white/90">SaaS Delivery Management</p>
-</div>
-
-</div>
-
 
 <?php if ($user): ?>
 
 <nav class="ml-auto flex items-center gap-6 text-sm font-medium text-white/90">
 
-
-<!-- DASHBOARD -->
-<a href="index.php?route=dashboard"
-class="flex items-center gap-1 hover:text-white transition">
-
-<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
-fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-<path stroke-linecap="round" stroke-linejoin="round"
-d="M3 13h8V3H3v10zM13 21h8V11h-8v10zM3 21h8v-6H3v6zM13 3v6h8V3h-8z"/>
-</svg>
-
-Dashboard
+<!-- DASHBOARD (ALL) -->
+<a href="index.php?route=dashboard" class="flex items-center gap-1 hover:text-white transition">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round"
+        d="M3 13h8V3H3v10zm10 8h8V11h-8v10zM3 21h8v-6H3v6zm10-10h8V3h-8v8z"/>
+    </svg>
+    Dashboard
 </a>
 
+<!-- SUPER ADMIN -->
+<?php if ($role === 'super_admin'): ?>
+<a href="index.php?route=agency" class="flex items-center gap-1 hover:text-white transition">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+        d="M3 7h18M3 12h18M3 17h18"/>
+    </svg>
+    Agency
+</a>
+<?php endif; ?>
+
+
+<!-- AGENCY ADMIN + OFFICE STAFF -->
+<?php if (in_array($role, ['agency_admin','office_staff'])): ?>
 
 <!-- CUSTOMERS DROPDOWN -->
 <div class="relative group">
@@ -87,6 +103,7 @@ Route Configuration
 </div>
 
 </div>
+
 
 
 <!-- SETTINGS DROPDOWN -->
@@ -170,6 +187,51 @@ Vehicles
 
 </div>
 
+
+<!-- BILLS -->
+<div class="relative group">
+
+    <a href="#"
+    class="flex items-center gap-1 hover:text-white transition">
+
+        <svg xmlns="http://www.w3.org/2000/svg"
+        class="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 14l2-2 4 4m1-10H6a2 2 0 00-2 2v12l4-2 4 2 4-2 4 2V6a2 2 0 00-2-2z"/>
+        </svg>
+
+        Bills
+    </a>
+
+    <!-- DROPDOWN -->
+    <div class="absolute left-0 hidden group-hover:block z-50">
+        <div class="pt-2">
+            <div class="bg-white text-black rounded shadow-lg w-48">
+
+                <a href="index.php?route=generate_bill_page" class="block px-4 py-2 hover:bg-gray-100">
+                    Generate Bill
+                </a>
+
+                <a href="index.php?route=bill_list" class="block px-4 py-2 hover:bg-gray-100">
+                    Bill List
+                </a>
+
+                <a href="index.php?route=receipt_page" class="block px-4 py-2 hover:bg-gray-100">
+                    Receipt Entry
+                </a>
+
+            </div>
+        </div>
+    </div>
+
+</div> <!-- ✅ THIS IS IMPORTANT -->
+
+
+
 <!-- REPORTS -->
 <a href="index.php?route=delivery_report"
 class="flex items-center gap-1 hover:text-white transition">
@@ -184,6 +246,10 @@ d="M3 3v18h18M7 15l3-3 4 4 5-5"/>
 
 Reports
 </a>
+
+
+<?php endif; ?>
+
 
 <!-- LOGOUT -->
 <a href="index.php?route=logout"
