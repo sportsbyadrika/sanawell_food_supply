@@ -106,6 +106,10 @@ $routes = [
 'generate_bill_page' => [BillController::class, 'generateBillPage'],
 'generate_bill' => [BillController::class, 'generateBill'],
 'bill_list' => [BillController::class, 'billList'],
+
+'receipt_entry' => [BillController::class, 'receiptEntry'],
+'save_receipt' => [BillController::class, 'saveReceipt'],
+'receipt_page' => [BillController::class, 'receiptPage'],
 'change_request'=>[ChangeRequestController::class,'index'],
 'change_request_store'=>[ChangeRequestController::class,'store'],
 'change_request_cancel'=>[ChangeRequestController::class,'cancel'],

@@ -43,8 +43,8 @@ public function createBill($data)
 {
     $stmt = $this->db->prepare("
         INSERT INTO bills 
-        (route_id, customer_id, bill_from, bill_to, bill_type, total_amount, tax_amount, final_amount)
-        VALUES (?,?,?,?,?,?,?,?)
+        (route_id, customer_id, bill_from, bill_to, bill_type, bill_date, total_amount, tax_amount, final_amount, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
     $stmt->execute([
@@ -53,58 +53,185 @@ public function createBill($data)
         $data['bill_from'],
         $data['bill_to'],
         $data['bill_type'],
+        date('Y-m-d'),
         $data['total_amount'],
         $data['tax_amount'],
-        $data['final_amount']
+        $data['final_amount'],
+        'BILL GENERATED'
     ]);
 
+     
     return $this->db->lastInsertId();
+   
 }
 
 public function getBills()
 {
     return $this->db->query("
-        SELECT b.*, c.name, c.mobile 
+        SELECT b.*, c.name, c.mobile , c.address
         FROM bills b
         JOIN customers c ON c.id = b.customer_id
         ORDER BY b.id DESC
     ")->fetchAll(PDO::FETCH_ASSOC);
 }
 
-public function getPendingBills($search, $route_id)
-{
+public function getBillsByRoute($route_id) {
+
     $stmt = $this->db->prepare("
-        SELECT b.*, c.name, c.mobile
+        SELECT b.*, c.name
         FROM bills b
         JOIN customers c ON c.id = b.customer_id
-        WHERE b.status = 'generated'
-        AND (c.name LIKE ? OR c.mobile LIKE ?)
-        AND b.route_id = ?
+        WHERE c.route_id = ?
     ");
 
-    $stmt->execute(["%$search%", "%$search%", $route_id]);
+    $stmt->execute([$route_id]);
 
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
+public function getAllBills()
+{
+    $sql = "SELECT 
+                b.id,
+                b.customer_id,
+                b.bill_date,
+                b.bill_from,
+                b.bill_to,
+                b.bill_type,
+                b.final_amount AS total,
+
+                (b.final_amount - IFNULL(SUM(r.amount), 0)) AS balance,
+
+                c.name AS customer_name,
+                c.mobile
+
+            FROM bills b
+
+            JOIN customers c ON c.id = b.customer_id
+
+            LEFT JOIN receipts r ON r.bill_id = b.id
+
+            GROUP BY b.id
+
+            ORDER BY b.id DESC";
+
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+public function getPendingBills()
+{
+    $sql = "SELECT 
+                b.id,
+                b.customer_id,
+                b.bill_date,
+                b.bill_from,
+                b.bill_to,
+                b.bill_type,
+                b.final_amount AS total,
+
+                (b.final_amount - IFNULL(SUM(r.amount), 0)) AS balance,
+
+                c.name AS customer_name,
+                c.mobile
+
+            FROM bills b
+
+            JOIN customers c ON c.id = b.customer_id
+
+            LEFT JOIN receipts r ON r.bill_id = b.id
+
+            GROUP BY b.id
+
+            HAVING balance > 0
+
+            ORDER BY b.id DESC";
+
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+public function getBillById($id)
+{
+    $sql = "SELECT 
+                b.id,
+                b.customer_id,
+                b.bill_date,
+                b.bill_from,
+                b.bill_to,
+                b.bill_type,
+                b.final_amount,
+
+                (b.final_amount - IFNULL(SUM(r.amount), 0)) AS balance,
+
+                c.name AS customer_name,
+                c.mobile,
+                c.address
+
+            FROM bills b
+
+            JOIN customers c ON c.id = b.customer_id
+
+            LEFT JOIN receipts r ON r.bill_id = b.id
+
+            WHERE b.id = ?
+
+            GROUP BY b.id";
+
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute([$id]);
+
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+public function getReceipts($search, $route_id)
+{
+    $stmt = $this->db->prepare("
+        SELECT r.*, c.name
+        FROM receipts r
+        JOIN customers c ON c.id = r.customer_id
+        WHERE (c.name LIKE ? OR c.mobile LIKE ?)
+        AND c.route_id = ?
+        ORDER BY r.id DESC
+    ");
+
+    $stmt->execute(["%$search%", "%$search%", $route_id]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 public function saveReceipt($data)
 {
     $stmt = $this->db->prepare("
-        INSERT INTO receipts
-        (bill_id, customer_id, route_id, receipt_date, amount, payment_mode, transaction_ref, transaction_date)
-        VALUES (?,?,?,?,?,?,?,?)
+        INSERT INTO receipts 
+        (bill_id, receipt_date, amount, payment_mode, transaction_ref, transaction_date, status, verified_date, verified_user_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
-    $stmt->execute([
+    return $stmt->execute([
         $data['bill_id'],
-        $data['customer_id'],
-        $data['route_id'],
         $data['receipt_date'],
         $data['amount'],
-        $data['payment_mode'],
+        $data['mode'],
         $data['transaction_ref'],
-        $data['transaction_date']
+        $data['transaction_date'],
+        $data['status'],
+        $data['verified_date'],
+        $data['verified_user_id']
     ]);
+}
+
+public function getTotalCollection($bill_id)
+{
+    $stmt = $this->db->prepare("
+        SELECT IFNULL(SUM(amount),0) as total 
+        FROM receipts 
+        WHERE bill_id = ?
+    ");
+
+    $stmt->execute([$bill_id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 }
 
 public function verifyReceipt($receipt_id, $user_id)
@@ -138,9 +265,72 @@ public function getDashboardSummary()
     return $this->db->query("
         SELECT 
         IFNULL(SUM(final_amount),0) as total_demand,
-        (SELECT IFNULL(SUM(amount),0) FROM receipts) as total_collection
+        (SELECT IFNULL(SUM(amount),0) FROM receipts WHERE status='verified') as total_collection,
+        (
+            IFNULL(SUM(final_amount),0) - 
+            (SELECT IFNULL(SUM(amount),0) FROM receipts WHERE status='verified')
+        ) as balance
         FROM bills
     ")->fetch(PDO::FETCH_ASSOC);
+}
+
+public function getNotificationCounts()
+{
+    return $this->db->query("
+        SELECT
+        (SELECT COUNT(*) FROM bills WHERE status='BILL GENERATED') as pending_bills,
+        (SELECT COUNT(*) FROM receipts WHERE status='verified') as verified_receipts
+    ")->fetch(PDO::FETCH_ASSOC);
+}
+public function updateBillStatus($bill_id)
+{
+    // 1. Get bill total
+    $stmt = $this->db->prepare("SELECT final_amount FROM bills WHERE id=?");
+    $stmt->execute([$bill_id]);
+    $bill = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // 2. Get total paid
+    $stmt = $this->db->prepare("
+        SELECT IFNULL(SUM(amount),0) as paid 
+        FROM receipts 
+        WHERE bill_id=? AND status IN ('entry','verified')
+    ");
+    $stmt->execute([$bill_id]);
+    $payment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // 3. Compare
+    if ($payment['paid'] >= $bill['final_amount']) {
+        $stmt = $this->db->prepare("
+            UPDATE bills 
+            SET status='CLOSED' 
+            WHERE id=?
+        ");
+        $stmt->execute([$bill_id]);
+    }
+}
+
+public function getReceiptSummary($search = '', $route_id = '')
+{
+    
+    $demand = $this->db->query("
+        SELECT SUM(final_amount) as total_demand 
+        FROM bills
+    ")->fetch(PDO::FETCH_ASSOC)['total_demand'] ?? 0;
+
+    
+    $collection = $this->db->query("
+        SELECT SUM(amount) as total_collection 
+        FROM receipts
+    ")->fetch(PDO::FETCH_ASSOC)['total_collection'] ?? 0;
+
+    
+    $balance = $demand - $collection;
+
+    return [
+        'total_demand' => $demand,
+        'total_collection' => $collection,
+        'balance' => $balance
+    ];
 }
 
 }

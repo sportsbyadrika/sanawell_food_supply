@@ -220,7 +220,7 @@ Vehicles
                     Bill List
                 </a>
 
-                <a href="index.php?route=receipt_page" class="block px-4 py-2 hover:bg-gray-100">
+                <a href="index.php?route=receipt_entry" class="block px-4 py-2 hover:bg-gray-100">
                     Receipt Entry
                 </a>
 
