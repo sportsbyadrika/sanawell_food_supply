@@ -6,12 +6,16 @@ class Route extends BaseModel
    public function allByAgency($agencyId)
 {
     $stmt = $this->db->prepare("
-        SELECT r.*, u.name AS driver_name
-        FROM routes r
-        LEFT JOIN users u ON r.driver_id = u.id
-        WHERE r.agency_id = ?
-        ORDER BY r.id DESC
-    ");
+    SELECT 
+        r.*, 
+        u.name AS driver_name,
+        v.vehicle_no
+    FROM routes r
+    LEFT JOIN users u ON r.driver_id = u.id
+    LEFT JOIN vehicles v ON r.vehicle_id = v.id
+    WHERE r.agency_id = ?
+    ORDER BY r.id DESC
+");
 
     $stmt->execute([$agencyId]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -52,7 +56,7 @@ public function update(int $id, array $data): void
 {
     $stmt = $this->db->prepare("
         UPDATE routes
-SET name = ?, type = ?, description = ?, driver_id = ?
+SET name = ?, type = ?, description = ?, driver_id = ?,vehicle_id=? 
 WHERE id = ?
     ");
 
@@ -61,6 +65,7 @@ WHERE id = ?
         $data['type'],
         $data['description'],
         $data['driver_id'],
+         $data['vehicle_id'], 
         $id
     ]);
 }

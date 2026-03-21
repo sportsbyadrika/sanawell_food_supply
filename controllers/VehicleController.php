@@ -30,6 +30,7 @@ class VehicleController extends BaseController
         $vehicleModel = new VehicleModel();
 
         $vehicleModel->createVehicle([
+             'agency_id' => $agencyId,
             'vehicle_no' => $_POST['vehicle_no'],
             'vehicle_company' => $_POST['vehicle_company'],
             'vehicle_type' => $_POST['vehicle_type'],

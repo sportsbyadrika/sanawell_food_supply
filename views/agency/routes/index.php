@@ -60,6 +60,7 @@
                         <th class="px-4 py-3">Type</th>
                         <th class="px-4 py-3">Description</th>
                          <th class="px-4 py-3">Driver</th>
+                        <th class="px-4 py-3">Vehicle</th>
                         <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3">Actions</th>
                     </tr>
@@ -76,6 +77,13 @@
     <?php if ($route['driver_name']) : ?>
         <?= htmlspecialchars($route['driver_name']) ?>
     <?php else : ?>
+        <span style="color:#dc3545; font-weight:500;">Not Assigned</span>
+    <?php endif; ?>
+</td>
+<td class="px-4 py-3">
+    <?php if ($route['vehicle_no']): ?>
+        <?= htmlspecialchars($route['vehicle_no']) ?>
+    <?php else: ?>
         <span style="color:#dc3545; font-weight:500;">Not Assigned</span>
     <?php endif; ?>
 </td>

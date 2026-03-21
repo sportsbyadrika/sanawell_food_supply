@@ -61,6 +61,18 @@
     <?php endforeach; ?>
 </select>
     </div>
+    <div class="mb-5">
+    <label class="block text-sm font-medium text-gray-700">Vehicle</label>
+    <select name="vehicle_id" class="w-full mt-1 p-2 border rounded-lg">
+        <option value="">Select Vehicle</option>
+        <?php foreach ($vehicles as $vehicle): ?>
+            <option value="<?= $vehicle['id']; ?>"
+                <?= ($route['vehicle_id'] == $vehicle['id']) ? 'selected' : '' ?>>
+                <?= $vehicle['vehicle_no']; ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+</div>
             <div class="flex justify-between items-center">
                 <a href="index.php?route=routes"
                    class="px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">

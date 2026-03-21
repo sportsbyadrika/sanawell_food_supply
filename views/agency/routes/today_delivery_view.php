@@ -88,35 +88,37 @@ $totalCancelledPackets = 0;
     <!-- DRIVER -->
     <div>
         <label class="text-s-bold text-gray-500">Driver</label>
-        <select name="driver_id"
-                class="border rounded px-3 py-2 text-sm">
+       <select name="driver_id" class="border rounded px-3 py-2 text-sm">
 
-            <option value="">Select Driver</option>
+    <option value="">Select Driver</option>
 
-            <?php foreach($drivers ?? [] as $driver): ?>
+    <?php foreach ($drivers ?? [] as $driver): ?>
+        <option value="<?= $driver['id']; ?>"
+            <?= ($driver['id'] == $selected_driver) ? 'selected' : ''; ?>>
+            
+            <?= htmlspecialchars($driver['name']); ?>
 
-                <option value="<?= $driver['id'] ?>">
-                    <?= htmlspecialchars($driver['name']) ?>
-                </option>
+        </option>
+    <?php endforeach; ?>
 
-            <?php endforeach; ?>
-
-        </select>
+</select>
     </div>
 
     <!-- VEHICLE -->
     <div>
         <label class="text-s-bold text-gray-500">Vehicle</label>
-        <select name="vehicle_no" class="border rounded px-3 py-2 text-sm">
-<option value="">Select Vehicle</option>
+       <select name="vehicle_no" class="border rounded px-3 py-2 text-sm">
 
-<?php foreach ($vehicles as $vehicle): ?>
+    <option value="">Select Vehicle</option>
 
-<option value="<?= $vehicle['vehicle_no']; ?>">
-<?= $vehicle['vehicle_no']; ?> - <?= $vehicle['vehicle_company']; ?>
-</option>
+    <?php foreach ($vehicles ?? [] as $vehicle): ?>
+        <option value="<?= $vehicle['id']; ?>"
+            <?= ($vehicle['id'] == $selected_vehicle) ? 'selected' : ''; ?>>
+            
+            <?= $vehicle['vehicle_no']; ?>
 
-<?php endforeach; ?>
+        </option>
+    <?php endforeach; ?>
 
 </select>
     </div>

@@ -9,23 +9,23 @@ class VehicleModel
         $this->db = Database::connection();
     }
 
-  public function getVehicles()
+  public function getVehicles($agencyId = null)
 {
-    $stmt = $this->db->prepare("
-        SELECT 
-            vehicle_no,
-            vehicle_company,
-            vehicle_model,
-            vehicle_type,
-            fuel_type,
-            registration_date,
-insurance_valid_upto
-        FROM vehicles
-        WHERE status = 1
-        ORDER BY vehicle_no
-    ");
+    $sql = "SELECT 
+                id,
+                vehicle_no
+            FROM vehicles 
+            WHERE status = 1";
 
-    $stmt->execute();
+    if ($agencyId) {
+        $sql .= " AND agency_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$agencyId]);
+    } else {
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+    }
+
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
@@ -33,11 +33,12 @@ insurance_valid_upto
 {
     $stmt = $this->db->prepare("
         INSERT INTO vehicles
-        (vehicle_no, vehicle_company, vehicle_type, fuel_type, registration_date, insurance_valid_upto)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (agency_id,vehicle_no, vehicle_company, vehicle_type, fuel_type, registration_date, insurance_valid_upto)
+        VALUES (?, ?, ?, ?, ?, ?,?)
     ");
 
     $stmt->execute([
+        $data['agency_id'],
         $data['vehicle_no'],
         $data['vehicle_company'],
         $data['vehicle_type'],

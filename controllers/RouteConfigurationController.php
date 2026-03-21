@@ -287,6 +287,8 @@ foreach ($loadSummary as $row) {
             $deliveredCount++;
         }
     }
+    $selected_driver = $route['driver_id'] ?? null;
+    $selected_vehicle = $route['vehicle_id'] ?? null;
 
     $this->render('agency/routes/today_delivery_view', [
     'route' => $route,
@@ -297,6 +299,8 @@ foreach ($loadSummary as $row) {
     'addedPackets' => $addedPackets,
     'cancelledPackets' => $cancelledPackets,
     'totalPackets' => $totalPackets,
+    'selected_driver' => $selected_driver,
+    'selected_vehicle' => $selected_vehicle,
     'drivers' => $drivers,
     'vehicles' => $vehicles
 ]);

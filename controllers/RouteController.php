@@ -1,13 +1,15 @@
 <?php
-
+require_once __DIR__ . '/../models/VehicleModel.php';
 class RouteController extends BaseController
 {
     private $routeModel;
+    private $vehicleModel;
 
 public function __construct()
 {
     parent::__construct();   
     $this->routeModel = new Route();
+    $this->vehicleModel = new VehicleModel();
 }
 
    public function index(): void
@@ -57,10 +59,12 @@ public function edit(): void
 
     $userModel = new User();
     $drivers = $userModel->getDriversByAgency($agencyId);
-
+    $vehicleModel = new VehicleModel();
+   $vehicles = $this->vehicleModel->getVehicles($agencyId);
     $this->render('agency/routes/routes_edit', [
         'route' => $route,
         'drivers' => $drivers,   
+        'vehicles' => $vehicles,
         'csrf_token' => Csrf::token()
     ]);
 }
@@ -76,7 +80,8 @@ public function update(): void
     'name' => $_POST['name'],
     'type' => $_POST['type'],
     'description' => $_POST['description'],
-    'driver_id' => $_POST['driver_id'] ?: null
+    'driver_id' => $_POST['driver_id'] ?: null,
+    'vehicle_id' => $_POST['vehicle_id'] ?: null
 ]);
 
     header("Location: index.php?route=routes");
