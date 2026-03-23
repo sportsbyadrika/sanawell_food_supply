@@ -1,8 +1,8 @@
 <?php
 $summary = $summary ?? ['total_demand' => 0, 'total_collection' => 0, 'balance' => 0];
 $routes = $routes ?? [];
-$route_id = (int) ($route_id ?? 0);
-$selectedRoute = $selectedRoute ?? null;
+$route_id = (int) ($route_id ?? ($selected_route ?? 0));
+$selectedRouteName = $selected_route_name ?? (($selectedRoute['name'] ?? null) ?: 'All Routes');
 $selectedBillId = (int) ($selectedBillId ?? 0);
 $pendingBills = $pendingBills ?? [];
 $bill = $bill ?? null;
@@ -13,17 +13,17 @@ $error = $error ?? '';
 $success = $success ?? '';
 $canSubmitReceipt = $canSubmitReceipt ?? false;
 
-$routeHeading = $selectedRoute['name'] ?? 'All Routes';
 $pendingBalance = (float) ($summary['balance'] ?? 0);
 $pendingBorderClass = $pendingBalance > 0 ? 'border-red-500' : 'border-green-500';
 $pendingTextClass = $pendingBalance > 0 ? 'text-red-600' : 'text-green-600';
+$routeHeading = $route_id > 0 ? $selectedRouteName : 'All Routes';
 ?>
 
 <div class="max-w-7xl mx-auto mt-6 space-y-6 px-4">
     <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-5 rounded-xl shadow flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-            <h1 class="text-xl font-semibold">Pending Bills - Route <?= htmlspecialchars($routeHeading, ENT_QUOTES, 'UTF-8') ?></h1>
-            <p class="text-sm opacity-90">Filter bills on the left, then explicitly select one to fill the payment form on the right.</p>
+            <h1 class="text-xl font-semibold">Pending Bills - <?= htmlspecialchars($routeHeading, ENT_QUOTES, 'UTF-8') ?></h1>
+            <p class="text-sm opacity-90">Search filters list. Click Select to load form.</p>
         </div>
         <a href="index.php?route=bill_list<?= $route_id > 0 ? '&route_id=' . $route_id : '' ?>" class="bg-white/20 px-4 py-2 rounded-lg hover:bg-white/30 text-center">Back to Bills</a>
     </div>
@@ -60,8 +60,8 @@ $pendingTextClass = $pendingBalance > 0 ? 'text-red-600' : 'text-green-600';
             <div class="bg-white rounded-xl shadow p-5">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
                     <div>
-                        <h2 class="font-semibold text-gray-700">Pending Bills - Route <?= htmlspecialchars($routeHeading, ENT_QUOTES, 'UTF-8') ?></h2>
-                        <p class="text-sm text-gray-500">Search only filters the list. The form changes only when you click Select.</p>
+                        <h2 class="font-semibold text-gray-700">Pending Bills - <?= htmlspecialchars($routeHeading, ENT_QUOTES, 'UTF-8') ?></h2>
+                        <p class="text-sm text-gray-500">Search filters list. Click Select to load form.</p>
                     </div>
                 </div>
 
@@ -82,13 +82,7 @@ $pendingTextClass = $pendingBalance > 0 ? 'text-red-600' : 'text-green-600';
 
                     <div>
                         <label class="block text-sm text-gray-600 mb-1">Search</label>
-                        <input
-                            type="text"
-                            name="search"
-                            value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>"
-                            placeholder="Search customer name or mobile"
-                            class="w-full border p-3 rounded-lg"
-                        >
+                        <input type="text" name="search" value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" placeholder="Search customer name or mobile" class="w-full border p-3 rounded-lg">
                     </div>
 
                     <button class="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700">Filter</button>
@@ -116,13 +110,8 @@ $pendingTextClass = $pendingBalance > 0 ? 'text-red-600' : 'text-green-600';
                                     <?php
                                     $isPaid = (float) $pendingBill['balance'] <= 0 || strcasecmp((string) $pendingBill['status'], 'Paid') === 0;
                                     $isSelected = $selectedBillId === (int) $pendingBill['id'];
-                                    $rowClass = $isSelected
-                                        ? 'bg-blue-50 ring-1 ring-inset ring-blue-200'
-                                        : 'hover:bg-gray-50';
-                                    $selectUrl = 'index.php?route=receipt_entry&bill_id=' . (int) $pendingBill['id'];
-                                    if ($route_id > 0) {
-                                        $selectUrl .= '&route_id=' . $route_id;
-                                    }
+                                    $rowClass = $isSelected ? 'bg-blue-50 ring-1 ring-inset ring-blue-200' : 'hover:bg-gray-50';
+                                    $selectUrl = 'index.php?route=receipt_entry&bill_id=' . (int) $pendingBill['id'] . '&route_id=' . (int) ($route_id > 0 ? $route_id : ($pendingBill['route_id'] ?? 0));
                                     if ($search !== '') {
                                         $selectUrl .= '&search=' . urlencode($search);
                                     }
@@ -137,9 +126,7 @@ $pendingTextClass = $pendingBalance > 0 ? 'text-red-600' : 'text-green-600';
                                         <td class="p-3 font-medium text-gray-800"><?= htmlspecialchars($pendingBill['customer_name'], ENT_QUOTES, 'UTF-8') ?></td>
                                         <td class="p-3 text-gray-600"><?= htmlspecialchars((string) ($pendingBill['route_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
                                         <td class="p-3"><?= htmlspecialchars($pendingBill['mobile'], ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td class="p-3 text-xs text-gray-500">
-                                            <?= htmlspecialchars(($pendingBill['bill_from'] ?? $pendingBill['bill_date']) . ' to ' . ($pendingBill['bill_to'] ?? $pendingBill['bill_date']), ENT_QUOTES, 'UTF-8') ?>
-                                        </td>
+                                        <td class="p-3 text-xs text-gray-500"><?= htmlspecialchars(($pendingBill['bill_from'] ?? $pendingBill['bill_date']) . ' to ' . ($pendingBill['bill_to'] ?? $pendingBill['bill_date']), ENT_QUOTES, 'UTF-8') ?></td>
                                         <td class="p-3 text-right font-semibold">₹ <?= number_format((float) $pendingBill['total'], 2) ?></td>
                                         <td class="p-3 text-right font-semibold <?= $isPaid ? 'text-green-600' : 'text-red-600' ?>">₹ <?= number_format((float) $pendingBill['balance'], 2) ?></td>
                                         <td class="p-3 text-center">
@@ -153,9 +140,8 @@ $pendingTextClass = $pendingBalance > 0 ? 'text-red-600' : 'text-green-600';
                                             <?php if ($isPaid): ?>
                                                 <button type="button" class="bg-gray-200 text-gray-500 px-3 py-1.5 rounded text-xs cursor-not-allowed" disabled>Paid</button>
                                             <?php else: ?>
-                                                <a href="<?= htmlspecialchars($selectUrl, ENT_QUOTES, 'UTF-8') ?>"
-                                                   class="<?= $isSelected ? 'bg-blue-700' : 'bg-blue-600 hover:bg-blue-700' ?> text-white px-3 py-1.5 rounded text-xs inline-flex items-center gap-1">
-                                                   <?= $isSelected ? 'Selected' : 'Select' ?>
+                                                <a href="<?= htmlspecialchars($selectUrl, ENT_QUOTES, 'UTF-8') ?>" class="<?= $isSelected ? 'bg-blue-700' : 'bg-blue-600 hover:bg-blue-700' ?> text-white px-3 py-1.5 rounded text-xs inline-flex items-center gap-1">
+                                                    <?= $isSelected ? 'Selected' : 'Select' ?>
                                                 </a>
                                             <?php endif; ?>
                                         </td>
@@ -180,7 +166,7 @@ $pendingTextClass = $pendingBalance > 0 ? 'text-red-600' : 'text-green-600';
                 </div>
 
                 <?php if (empty($bill['id'])): ?>
-                    <p class="text-sm text-gray-500">No bill selected. Use the Select button from the pending list to load the form and receipt history.</p>
+                    <p class="text-sm text-gray-500">No bill selected. Select a bill to continue.</p>
                 <?php else: ?>
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
@@ -223,26 +209,22 @@ $pendingTextClass = $pendingBalance > 0 ? 'text-red-600' : 'text-green-600';
         <div class="xl:col-span-2 bg-white rounded-xl shadow p-5 sticky top-4">
             <div class="mb-4">
                 <h2 class="font-semibold text-gray-700">Receipt Form</h2>
-                <p class="text-sm text-gray-500">The form is populated from the selected bill and keeps the current route filter in the URL after save.</p>
+                <p class="text-sm text-gray-500">The form stays empty until you explicitly click Select from the pending bills list.</p>
             </div>
 
             <?php if (!empty($bill['id'])): ?>
                 <div class="mb-4 p-4 rounded-lg bg-blue-50 border border-blue-100 text-sm text-gray-700 space-y-1">
                     <p class="text-base font-semibold text-blue-800">Selected Bill: <?= htmlspecialchars($bill['customer_name'], ENT_QUOTES, 'UTF-8') ?> (₹<?= number_format((float) $bill['balance'], 2) ?> pending)</p>
-                    <p><span class="font-semibold">Bill:</span> BILL-<?= str_pad((string) $bill['id'], 4, '0', STR_PAD_LEFT) ?></p>
-                    <p><span class="font-semibold">Route:</span> <?= htmlspecialchars((string) ($bill['route_name'] ?? $routeHeading), ENT_QUOTES, 'UTF-8') ?></p>
+                    <p><span class="font-semibold">Bill No:</span> BILL-<?= str_pad((string) $bill['id'], 4, '0', STR_PAD_LEFT) ?></p>
+                    <p><span class="font-semibold">Customer Name:</span> <?= htmlspecialchars($bill['customer_name'], ENT_QUOTES, 'UTF-8') ?></p>
                     <p><span class="font-semibold">Mobile:</span> <?= htmlspecialchars($bill['mobile'], ENT_QUOTES, 'UTF-8') ?></p>
                     <p><span class="font-semibold">Balance:</span> ₹ <?= number_format((float) $bill['balance'], 2) ?></p>
                 </div>
                 <?php if (!$canSubmitReceipt): ?>
-                    <div class="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
-                        This bill is fully paid, so the receipt form is locked.
-                    </div>
+                    <div class="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">This bill is fully paid, so the receipt form is locked.</div>
                 <?php endif; ?>
             <?php else: ?>
-                <div class="mb-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-                    No bill selected. Search or filter the list, then click Select to load the receipt form.
-                </div>
+                <div class="mb-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-600">No bill selected. Select a bill to continue.</div>
             <?php endif; ?>
 
             <form method="POST" action="index.php?route=save_receipt" class="space-y-4">
@@ -251,28 +233,38 @@ $pendingTextClass = $pendingBalance > 0 ? 'text-red-600' : 'text-green-600';
                 <input type="hidden" name="search" value="<?= htmlspecialchars((string) ($formDefaults['search'] ?? $search), ENT_QUOTES, 'UTF-8') ?>">
 
                 <div>
+                    <label class="text-sm text-gray-600 block mb-1">Bill No</label>
+                    <input type="text" value="<?= !empty($bill['id']) ? 'BILL-' . str_pad((string) $bill['id'], 4, '0', STR_PAD_LEFT) : '' ?>" class="w-full border p-2.5 rounded-lg bg-gray-50" readonly>
+                </div>
+
+                <div>
+                    <label class="text-sm text-gray-600 block mb-1">Customer Name</label>
+                    <input type="text" value="<?= htmlspecialchars((string) ($bill['customer_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full border p-2.5 rounded-lg bg-gray-50" readonly>
+                </div>
+
+                <div>
+                    <label class="text-sm text-gray-600 block mb-1">Mobile</label>
+                    <input type="text" value="<?= htmlspecialchars((string) ($bill['mobile'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full border p-2.5 rounded-lg bg-gray-50" readonly>
+                </div>
+
+                <div>
+                    <label class="text-sm text-gray-600 block mb-1">Balance</label>
+                    <input type="text" value="<?= !empty($bill['id']) ? '₹ ' . number_format((float) ($bill['balance'] ?? 0), 2) : '' ?>" class="w-full border p-2.5 rounded-lg bg-gray-50" readonly>
+                </div>
+
+                <div>
                     <label class="text-sm text-gray-600 block mb-1">Receipt Date</label>
                     <input type="date" name="receipt_date" value="<?= htmlspecialchars((string) ($formDefaults['receipt_date'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full border p-2.5 rounded-lg" <?= !$canSubmitReceipt ? 'disabled' : '' ?> required>
                 </div>
 
                 <div>
                     <label class="text-sm text-gray-600 block mb-1">Amount</label>
-                    <input
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        max="<?= htmlspecialchars((string) ($bill['balance'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                        name="amount"
-                        value="<?= htmlspecialchars((string) ($formDefaults['amount'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                        class="w-full border p-2.5 rounded-lg bg-gray-50"
-                        <?= !$canSubmitReceipt ? 'disabled' : 'readonly' ?>
-                        required
-                    >
+                    <input type="number" step="0.01" min="0.01" max="<?= htmlspecialchars((string) ($bill['balance'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" name="amount" value="<?= htmlspecialchars((string) ($formDefaults['amount'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full border p-2.5 rounded-lg bg-gray-50" <?= !$canSubmitReceipt ? 'disabled' : 'readonly' ?> required>
                 </div>
 
                 <div>
                     <label class="text-sm text-gray-600 block mb-1">Payment Mode</label>
-                    <select name="payment_mode" class="w-full border p-2.5 rounded-lg" <?= !$canSubmitReceipt ? 'disabled' : '' ?>>
+                    <select name="payment_mode" class="w-full border p-2.5 rounded-lg" <?= !$canSubmitReceipt ? 'disabled' : '' ?> required>
                         <?php foreach (['Cash', 'UPI', 'Bank'] as $mode): ?>
                             <option value="<?= $mode ?>" <?= ($formDefaults['payment_mode'] ?? 'Cash') === $mode ? 'selected' : '' ?>><?= $mode ?></option>
                         <?php endforeach; ?>
@@ -304,9 +296,7 @@ $pendingTextClass = $pendingBalance > 0 ? 'text-red-600' : 'text-green-600';
                     <input type="text" name="verified_user_id" value="<?= htmlspecialchars((string) ($formDefaults['verified_user_id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full border p-2.5 rounded-lg" <?= !$canSubmitReceipt ? 'disabled' : '' ?>>
                 </div>
 
-                <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed" <?= !$canSubmitReceipt ? 'disabled' : '' ?>>
-                    Save Receipt
-                </button>
+                <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed" <?= !$canSubmitReceipt ? 'disabled' : '' ?>>Save Receipt</button>
             </form>
         </div>
     </div>

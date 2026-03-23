@@ -6,25 +6,32 @@ class BillController extends BaseController
         $model = new BillModel();
         $routeId = isset($_GET['route_id']) ? (int) $_GET['route_id'] : 0;
         $selectedRoute = $routeId > 0 ? $model->getRouteById($routeId) : null;
+        $selectedRouteName = $model->getRouteName($routeId);
 
         $data['routes'] = $model->getRoutes();
         $data['selectedRoute'] = $selectedRoute;
         $data['selectedRouteId'] = $routeId;
+        $data['selected_route'] = $routeId;
+        $data['selected_route_name'] = $selectedRouteName;
         $data['bills'] = $model->getBills($routeId ?: null);
-        $data['summary'] = $model->getDashboardSummary();
+        $data['summary'] = $model->getDashboardSummary($routeId ?: null);
 
         return $this->render('agency/bill/generate_bill', $data);
     }
 
     public function generateBill()
     {
-        $route_id = $_POST['route_id'];
-        $from = $_POST['from_date'];
-        $to = $_POST['to_date'];
-        $bill_type = $_POST['bill_type'];
+        $route_id = (int) ($_POST['route_id'] ?? 0);
+        $from = $_POST['from_date'] ?? '';
+        $to = $_POST['to_date'] ?? '';
+        $bill_type = $_POST['bill_type'] ?? 'MAIN';
+
+        if ($route_id <= 0 || $from === '' || $to === '') {
+            header('Location: index.php?route=generate_bill_page' . ($route_id > 0 ? '&route_id=' . $route_id : ''));
+            exit;
+        }
 
         $model = new BillModel();
-
         $customers = $model->getCustomerWiseData($route_id, $from, $to);
 
         foreach ($customers as $cust) {
@@ -52,7 +59,7 @@ class BillController extends BaseController
             }
         }
 
-        header('Location: index.php?route=generate_bill_page&route_id=' . (int) $route_id);
+        header('Location: index.php?route=generate_bill_page&route_id=' . $route_id);
         exit;
     }
 
@@ -61,14 +68,15 @@ class BillController extends BaseController
         $model = new BillModel();
         $routeId = isset($_GET['route_id']) ? (int) $_GET['route_id'] : 0;
         $selectedRoute = $routeId > 0 ? $model->getRouteById($routeId) : null;
-
-        $bills = $model->getAllBills($routeId ?: null);
+        $selectedRouteName = $model->getRouteName($routeId);
 
         $this->render('agency/bill/bill_list', [
-            'bills' => $bills,
+            'bills' => $model->getAllBills($routeId ?: null),
             'routes' => $model->getRoutes(),
             'selectedRouteId' => $routeId,
             'selectedRoute' => $selectedRoute,
+            'selected_route' => $routeId,
+            'selected_route_name' => $selectedRouteName,
         ]);
     }
 
@@ -76,11 +84,12 @@ class BillController extends BaseController
     {
         $model = new BillModel();
 
-        $search = $_POST['search'] ?? '';
-        $route_id = $_POST['route_id'] ?? '';
+        $search = trim($_POST['search'] ?? '');
+        $route_id = (int) ($_POST['route_id'] ?? 0);
+        $selectedRouteName = $model->getRouteName($route_id);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $bills = $model->getPendingBills($search, $route_id);
+            $bills = $model->getPendingBills($search, $route_id ?: null);
         } else {
             $bills = $model->getPendingBills();
         }
@@ -89,7 +98,9 @@ class BillController extends BaseController
             'routes' => $model->getRoutes(),
             'bills' => $bills,
             'receipts' => [],
-            'summary' => $model->getDashboardSummary(),
+            'summary' => $model->getDashboardSummary($route_id ?: null),
+            'selected_route' => $route_id,
+            'selected_route_name' => $selectedRouteName,
         ];
 
         return $this->render('agency/bill/receipt_page', $data);
@@ -114,6 +125,7 @@ class BillController extends BaseController
         $successMessage = $_GET['success'] ?? '';
         $canSubmitReceipt = false;
         $selectedRoute = $routeId > 0 ? $model->getRouteById($routeId) : null;
+        $selectedRouteName = $model->getRouteName($routeId);
 
         if ($billId > 0) {
             $selectedBill = $model->getBillById($billId);
@@ -157,6 +169,8 @@ class BillController extends BaseController
             'search' => $search,
             'route_id' => $routeId,
             'selectedRoute' => $selectedRoute,
+            'selected_route' => $routeId,
+            'selected_route_name' => $selectedRouteName,
             'selectedBillId' => $selectedBillId,
             'pendingBills' => $pendingBills,
             'bill' => $selectedBill,
@@ -172,14 +186,17 @@ class BillController extends BaseController
     {
         $model = new BillModel();
 
-        $search = $_POST['search'] ?? '';
-        $route_id = $_POST['route_id'] ?? '';
+        $search = trim($_POST['search'] ?? '');
+        $route_id = (int) ($_POST['route_id'] ?? 0);
+        $selectedRouteName = $model->getRouteName($route_id);
 
         $data = [
             'routes' => $model->getRoutes(),
-            'bills' => $model->getPendingBills($search, $route_id),
+            'bills' => $model->getPendingBills($search, $route_id ?: null),
             'receipts' => $model->getReceipts($search, $route_id),
             'summary' => $model->getReceiptSummary($search, $route_id),
+            'selected_route' => $route_id,
+            'selected_route_name' => $selectedRouteName,
         ];
 
         return $this->render('agency/bill/receipt_page', $data);
@@ -188,8 +205,8 @@ class BillController extends BaseController
     /**
      * Save receipt and update bill status.
      * - inserts into receipts table
-     * - keeps route/search context on redirect
-     * - refreshes the same selected bill after save
+     * - keeps route context on redirect
+     * - clears selected bill after save to avoid auto-fill confusion
      */
     public function saveReceipt()
     {
@@ -203,7 +220,7 @@ class BillController extends BaseController
         $routeId = (int) ($_POST['route_id'] ?? 0);
         $search = trim($_POST['search'] ?? '');
         $bill = $billId > 0 ? $model->getBillById($billId) : null;
-        $redirectBase = 'index.php?route=receipt_entry&bill_id=' . $billId;
+        $redirectBase = 'index.php?route=receipt_entry';
 
         if ($routeId > 0) {
             $redirectBase .= '&route_id=' . $routeId;
@@ -214,12 +231,21 @@ class BillController extends BaseController
         }
 
         if (!$bill) {
-            header('Location: index.php?route=receipt_entry&error=' . urlencode('Invalid bill selected.'));
+            header('Location: ' . $redirectBase . '&error=' . urlencode('Invalid bill selected.'));
             exit;
         }
 
         if ($routeId > 0 && (int) ($bill['route_id'] ?? 0) !== $routeId) {
-            header('Location: index.php?route=receipt_entry&route_id=' . $routeId . '&error=' . urlencode('Selected bill does not belong to the chosen route.'));
+            header('Location: ' . $redirectBase . '&error=' . urlencode('Selected bill does not belong to the chosen route.'));
+            exit;
+        }
+
+        $receiptDate = trim($_POST['receipt_date'] ?? '');
+        $paymentMode = trim($_POST['payment_mode'] ?? '');
+        $amountInput = trim((string) ($_POST['amount'] ?? ''));
+
+        if ($billId <= 0 || $receiptDate === '' || $paymentMode === '' || $amountInput === '') {
+            header('Location: ' . $redirectBase . '&error=' . urlencode('Bill, receipt date, amount, and payment mode are required.'));
             exit;
         }
 
@@ -229,7 +255,7 @@ class BillController extends BaseController
             exit;
         }
 
-        $amount = (float) ($_POST['amount'] ?? 0);
+        $amount = (float) $amountInput;
         if ($amount <= 0) {
             header('Location: ' . $redirectBase . '&error=' . urlencode('Receipt amount must be greater than zero.'));
             exit;
@@ -240,13 +266,12 @@ class BillController extends BaseController
             exit;
         }
 
-        $paymentMode = trim($_POST['payment_mode'] ?? 'Cash');
         $data = [
             'bill_id' => $billId,
             'route_id' => $bill['route_id'] ?? null,
-            'receipt_date' => $_POST['receipt_date'] ?? date('Y-m-d'),
+            'receipt_date' => $receiptDate,
             'amount' => $amount,
-            'payment_mode' => $paymentMode !== '' ? $paymentMode : 'Cash',
+            'payment_mode' => $paymentMode,
             'transaction_ref' => trim($_POST['transaction_ref'] ?? '') ?: null,
             'transaction_date' => trim($_POST['transaction_date'] ?? '') ?: null,
             'status' => $_POST['status'] ?? 'entry',

@@ -46,6 +46,13 @@ class BillModel extends BaseModel
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
+    public function getRouteName($routeId)
+    {
+        $route = $this->getRouteById($routeId);
+
+        return $route['name'] ?? 'All Routes';
+    }
+
     public function createBill($data)
     {
         $stmt = $this->db->prepare("
@@ -408,18 +415,36 @@ class BillModel extends BaseModel
         ]);
     }
 
-    public function getDashboardSummary()
+    public function getDashboardSummary($routeId = null)
     {
-        return $this->db->query("
+        $sql = "
             SELECT
-                IFNULL(SUM(final_amount),0) as total_demand,
-                (SELECT IFNULL(SUM(amount),0) FROM receipts WHERE status='verified') as total_collection,
-                (
-                    IFNULL(SUM(final_amount),0) -
-                    (SELECT IFNULL(SUM(amount),0) FROM receipts WHERE status='verified')
-                ) as balance
-            FROM bills
-        ")->fetch(PDO::FETCH_ASSOC);
+                COALESCE(SUM(b.final_amount), 0) AS total_demand,
+                COALESCE(SUM(receipt_totals.total_collection), 0) AS total_collection
+            FROM bills b
+            LEFT JOIN (
+                SELECT bill_id, SUM(amount) AS total_collection
+                FROM receipts
+                GROUP BY bill_id
+            ) receipt_totals ON receipt_totals.bill_id = b.id
+        ";
+
+        if ($routeId !== null) {
+            $sql .= ' WHERE b.route_id = :route_id';
+        }
+
+        $stmt = $this->db->prepare($sql);
+
+        if ($routeId !== null) {
+            $stmt->bindValue(':route_id', (int) $routeId, PDO::PARAM_INT);
+        }
+
+        $stmt->execute();
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['total_demand' => 0, 'total_collection' => 0];
+        $row['balance'] = (float) $row['total_demand'] - (float) $row['total_collection'];
+
+        return $row;
     }
 
     public function getNotificationCounts()
@@ -457,22 +482,6 @@ class BillModel extends BaseModel
 
     public function getReceiptSummary($search = '', $route_id = '')
     {
-        $demand = $this->db->query("
-            SELECT SUM(final_amount) as total_demand
-            FROM bills
-        ")->fetch(PDO::FETCH_ASSOC)['total_demand'] ?? 0;
-
-        $collection = $this->db->query("
-            SELECT SUM(amount) as total_collection
-            FROM receipts
-        ")->fetch(PDO::FETCH_ASSOC)['total_collection'] ?? 0;
-
-        $balance = $demand - $collection;
-
-        return [
-            'total_demand' => $demand,
-            'total_collection' => $collection,
-            'balance' => $balance,
-        ];
+        return $this->getBillsSummary($route_id !== '' ? (int) $route_id : null);
     }
 }
