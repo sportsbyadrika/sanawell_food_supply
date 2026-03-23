@@ -93,6 +93,23 @@ public function receiptEntry()
 
     $bill_id = $_GET['id'] ?? null;
 
+    $bill = [];
+    if ($bill_id) {
+        $bill = $model->getBillById($bill_id);
+    }
+
+    if (!$bill) {
+        $bill = [
+            'id' => '',
+            'customer_name' => '',
+            'mobile' => '',
+            'address' => '',
+            'final_amount' => 0,
+            'balance' => 0
+        ];
+    }
+
+    
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $data = [
@@ -107,33 +124,49 @@ public function receiptEntry()
             'verified_user_id' => $_POST['verified_user_id']
         ];
 
-        // ✅ validation
+        
         if ($data['amount'] <= 0) {
             die("Invalid amount");
         }
 
-        $bill = $model->getBillById($data['bill_id']);
+        $billCheck = $model->getBillById($data['bill_id']);
 
-        if ($data['amount'] > $bill['balance']) {
+        if (!$billCheck) {
+            die("Invalid bill");
+        }
+
+        if ($data['amount'] > ($billCheck['balance'] ?? 0)) {
             die("Amount exceeds balance");
         }
 
         $model->saveReceipt($data);
-
+    
         header("Location: index.php?route=receipt_entry&id=" . $data['bill_id']);
         exit;
     }
 
-    $bill = $model->getBillById($bill_id);
-    $totalCollection = $model->getTotalCollection($bill_id);
+    
+    $summary = $model->getBillsSummary();
+    if (!$summary) {
+        $summary = [
+            'total_demand' => 0,
+            'total_collection' => 0,
+            'balance' => 0
+        ];
+    }
 
-    $data = [
-        'bill' => $bill,
-        'totalCollection' => $totalCollection
-    ];
+    
+    $receipts = [];
+    if ($bill_id) {
+        $receipts = $model->getReceiptsByBill($bill_id);
+    }
 
-    return $this->render('agency/bill/receipt_entry', $data);
+    
+  $this->render('agency/bill/receipt_entry', [
+    'summary' => $summary
+]);
 }
+
 public function searchReceipts()
 {
     $model = new BillModel();

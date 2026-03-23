@@ -89,6 +89,25 @@ public function getBillsByRoute($route_id) {
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
+public function getBillsSummary()
+{
+    
+    $query = "
+        SELECT 
+            COALESCE((SELECT SUM(final_amount) FROM bills), 0) AS total_demand,
+            COALESCE((SELECT SUM(amount) FROM receipts), 0) AS total_collection
+    ";
+
+    $stmt = $this->db->prepare($query);
+    $stmt->execute();
+
+    
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    $row['balance'] = $row['total_demand'] - $row['total_collection'];
+
+    return $row;
+}
 public function getAllBills()
 {
     $sql = "SELECT 
