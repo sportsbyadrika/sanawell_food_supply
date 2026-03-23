@@ -1,5 +1,9 @@
 <?php
 $filter = $_GET['filter'] ?? 'all';
+$routes = $routes ?? [];
+$selectedRouteId = (int) ($selectedRouteId ?? 0);
+$selectedRoute = $selectedRoute ?? null;
+$routeHeading = $selectedRoute['name'] ?? 'All Routes';
 ?>
 <div class="max-w-6xl mx-auto p-4 space-y-6">
 <div class="p-4 md:p-6">
@@ -7,17 +11,27 @@ $filter = $_GET['filter'] ?? 'all';
     <!-- HEADER -->
     <div class="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl p-5 mb-6 shadow-md flex justify-between items-center">
         <div>
-            <h2 class="text-white text-xl md:text-2xl font-semibold">Bills</h2>
+            <h2 class="text-white text-xl md:text-2xl font-semibold">Bills (<?= $selectedRoute ? 'Route: ' . htmlspecialchars($routeHeading, ENT_QUOTES, "UTF-8") : 'All Routes' ?>)</h2>
             <p class="text-blue-100 text-sm">Manage and track customer bills</p>
         </div>
 
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2 items-end">
+            <form method="GET" action="index.php" class="flex flex-wrap gap-2 items-end">
+                <input type="hidden" name="route" value="bill_list">
+                <select name="route_id" class="px-3 py-1.5 rounded-lg text-xs md:text-sm text-gray-700">
+                    <option value="0">All Routes</option>
+                    <?php foreach ($routes as $route): ?>
+                        <option value="<?= (int) $route['id'] ?>" <?= $selectedRouteId === (int) $route['id'] ? 'selected' : '' ?>><?= htmlspecialchars($route['name'], ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button class="bg-white text-blue-600 px-3 py-1.5 rounded-lg text-xs md:text-sm">Apply</button>
+            </form>
             <a href="index.php?route=bill_list&filter=all"
                class="bg-white/20 text-white px-3 py-1.5 rounded-lg text-xs md:text-sm">
                All
             </a>
 
-            <a href="index.php?route=receipt_page"
+            <a href="index.php?route=receipt_entry<?= $selectedRouteId > 0 ? "&route_id=" . $selectedRouteId : "" ?>"
                class="bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs md:text-sm">
                Pending
             </a>
@@ -82,9 +96,9 @@ $filter = $_GET['filter'] ?? 'all';
 
                 <div class="mt-3">
                     <?php if ($bill['balance'] > 0): ?>
-                        <a href="index.php?route=receipt_entry&bill_id=<?= $bill['id'] ?>"
+                        <a href="index.php?route=receipt_entry&bill_id=<?= $bill['id'] ?><?= $selectedRouteId > 0 ? "&route_id=" . $selectedRouteId : "" ?>"
                            class="block text-center bg-blue-500 text-white py-2 rounded-lg text-sm">
-                           Pay Now
+                           Make Payment
                         </a>
                     <?php else: ?>
                         <div class="text-center text-gray-400 text-sm">Completed</div>
@@ -100,7 +114,7 @@ $filter = $_GET['filter'] ?? 'all';
     <div class="hidden md:block bg-white rounded-2xl shadow overflow-hidden">
 
         <div class="px-4 py-3 border-b font-semibold text-gray-700">
-            Generated Bills
+            Bills (<?= $selectedRoute ? 'Route: ' . htmlspecialchars($routeHeading, ENT_QUOTES, 'UTF-8') : 'All Routes' ?>)
         </div>
 
         <div class="overflow-x-auto">
@@ -156,9 +170,9 @@ $filter = $_GET['filter'] ?? 'all';
 
                             <td class="px-4 py-3 text-center">
                                 <?php if ($bill['balance'] > 0): ?>
-                                    <a href="index.php?route=receipt_entry&bill_id=<?= $bill['id'] ?>"
+                                    <a href="index.php?route=receipt_entry&bill_id=<?= $bill['id'] ?><?= $selectedRouteId > 0 ? "&route_id=" . $selectedRouteId : "" ?>"
                                        class="bg-blue-500 text-white px-3 py-1 rounded text-xs">
-                                       Pay
+                                       Make Payment
                                     </a>
                                 <?php else: ?>
                                     <span class="text-gray-400 text-xs">Completed</span>
