@@ -296,7 +296,7 @@ $routeHeading = $route_id > 0 ? $selectedRouteName : 'All Routes';
                     <input type="text" name="verified_user_id" value="<?= htmlspecialchars((string) ($formDefaults['verified_user_id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-full border p-2.5 rounded-lg" <?= !$canSubmitReceipt ? 'disabled' : '' ?>>
                 </div>
 
-                <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed" <?= !$canSubmitReceipt ? 'disabled' : '' ?>>Save Receipt</button>
+                <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed" <?= !$canSubmitReceipt ? 'disabled' : '' ?>>Save Payment</button>
             </form>
         </div>
     </div>
