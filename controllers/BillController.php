@@ -4,9 +4,13 @@ class BillController extends BaseController
     public function generateBillPage()
     {
         $model = new BillModel();
+        $routeId = isset($_GET['route_id']) ? (int) $_GET['route_id'] : 0;
+        $selectedRoute = $routeId > 0 ? $model->getRouteById($routeId) : null;
 
         $data['routes'] = $model->getRoutes();
-        $data['bills'] = $model->getBills();
+        $data['selectedRoute'] = $selectedRoute;
+        $data['selectedRouteId'] = $routeId;
+        $data['bills'] = $model->getBills($routeId ?: null);
         $data['summary'] = $model->getDashboardSummary();
 
         return $this->render('agency/bill/generate_bill', $data);
@@ -48,16 +52,24 @@ class BillController extends BaseController
             }
         }
 
-        header("Location: index.php?route=generate_bill_page");
+        header('Location: index.php?route=generate_bill_page&route_id=' . (int) $route_id);
+        exit;
     }
 
     public function billList()
     {
         $model = new BillModel();
+        $routeId = isset($_GET['route_id']) ? (int) $_GET['route_id'] : 0;
+        $selectedRoute = $routeId > 0 ? $model->getRouteById($routeId) : null;
 
-        $bills = $model->getAllBills();
+        $bills = $model->getAllBills($routeId ?: null);
 
-        $this->render('agency/bill/bill_list', ['bills' => $bills]);
+        $this->render('agency/bill/bill_list', [
+            'bills' => $bills,
+            'routes' => $model->getRoutes(),
+            'selectedRouteId' => $routeId,
+            'selectedRoute' => $selectedRoute,
+        ]);
     }
 
     public function receiptPage()
@@ -85,27 +97,34 @@ class BillController extends BaseController
 
     /**
      * Receipt entry screen.
-     * - search pending bills by customer/mobile
-     * - load selected bill by bill_id
-     * - auto-fill receipt form using pending balance
+     * - search filters only the pending bill list
+     * - selected bill changes only through explicit Select action
+     * - route and search filters are preserved in the URL
      */
     public function receiptEntry()
     {
         $model = new BillModel();
 
         $billId = isset($_GET['bill_id']) ? (int) $_GET['bill_id'] : 0;
+        $routeId = isset($_GET['route_id']) ? (int) $_GET['route_id'] : 0;
         $search = trim($_GET['search'] ?? '');
         $selectedBill = null;
+        $selectedBillId = 0;
         $formError = $_GET['error'] ?? '';
         $successMessage = $_GET['success'] ?? '';
         $canSubmitReceipt = false;
+        $selectedRoute = $routeId > 0 ? $model->getRouteById($routeId) : null;
 
         if ($billId > 0) {
             $selectedBill = $model->getBillById($billId);
 
             if (!$selectedBill) {
                 $formError = 'Selected bill was not found.';
+            } elseif ($routeId > 0 && (int) ($selectedBill['route_id'] ?? 0) !== $routeId) {
+                $formError = 'Selected bill does not belong to the chosen route.';
+                $selectedBill = null;
             } else {
+                $selectedBillId = (int) $selectedBill['id'];
                 $canSubmitReceipt = (float) $selectedBill['balance'] > 0 && strcasecmp((string) $selectedBill['status'], 'Paid') !== 0;
 
                 if (!$canSubmitReceipt && $successMessage === '') {
@@ -114,12 +133,14 @@ class BillController extends BaseController
             }
         }
 
-        $summary = $model->getBillsSummary();
-        $pendingBills = $model->getPendingBills($search);
-        $receipts = $billId > 0 ? $model->getReceiptsByBill($billId) : [];
+        $summary = $model->getBillsSummary($routeId ?: null);
+        $pendingBills = $model->getPendingBills($search, $routeId ?: null);
+        $receipts = $selectedBillId > 0 ? $model->getReceiptsByBill($selectedBillId) : [];
 
         $formDefaults = [
             'bill_id' => $selectedBill['id'] ?? '',
+            'route_id' => $routeId ?: ($selectedBill['route_id'] ?? ''),
+            'search' => $search,
             'receipt_date' => date('Y-m-d'),
             'amount' => $selectedBill['balance'] ?? '',
             'payment_mode' => 'Cash',
@@ -131,8 +152,12 @@ class BillController extends BaseController
         ];
 
         return $this->render('agency/bill/receipt_entry', [
+            'routes' => $model->getRoutes(),
             'summary' => $summary,
             'search' => $search,
+            'route_id' => $routeId,
+            'selectedRoute' => $selectedRoute,
+            'selectedBillId' => $selectedBillId,
             'pendingBills' => $pendingBills,
             'bill' => $selectedBill,
             'receipts' => $receipts,
@@ -162,9 +187,9 @@ class BillController extends BaseController
 
     /**
      * Save receipt and update bill status.
-     * - blocks paid/zero-balance bills
-     * - blocks overpayment
-     * - supports partial payment by keeping bill Pending
+     * - inserts into receipts table
+     * - keeps route/search context on redirect
+     * - refreshes the same selected bill after save
      */
     public function saveReceipt()
     {
@@ -175,27 +200,43 @@ class BillController extends BaseController
 
         $model = new BillModel();
         $billId = (int) ($_POST['bill_id'] ?? 0);
+        $routeId = (int) ($_POST['route_id'] ?? 0);
+        $search = trim($_POST['search'] ?? '');
         $bill = $billId > 0 ? $model->getBillById($billId) : null;
+        $redirectBase = 'index.php?route=receipt_entry&bill_id=' . $billId;
+
+        if ($routeId > 0) {
+            $redirectBase .= '&route_id=' . $routeId;
+        }
+
+        if ($search !== '') {
+            $redirectBase .= '&search=' . urlencode($search);
+        }
 
         if (!$bill) {
             header('Location: index.php?route=receipt_entry&error=' . urlencode('Invalid bill selected.'));
             exit;
         }
 
+        if ($routeId > 0 && (int) ($bill['route_id'] ?? 0) !== $routeId) {
+            header('Location: index.php?route=receipt_entry&route_id=' . $routeId . '&error=' . urlencode('Selected bill does not belong to the chosen route.'));
+            exit;
+        }
+
         $balance = (float) ($bill['balance'] ?? 0);
         if ($balance <= 0 || strcasecmp((string) $bill['status'], 'Paid') === 0) {
-            header('Location: index.php?route=receipt_entry&error=' . urlencode('Receipt entry is not allowed for paid bills.'));
+            header('Location: ' . $redirectBase . '&error=' . urlencode('Receipt entry is not allowed for paid bills.'));
             exit;
         }
 
         $amount = (float) ($_POST['amount'] ?? 0);
         if ($amount <= 0) {
-            header('Location: index.php?route=receipt_entry&bill_id=' . $billId . '&error=' . urlencode('Receipt amount must be greater than zero.'));
+            header('Location: ' . $redirectBase . '&error=' . urlencode('Receipt amount must be greater than zero.'));
             exit;
         }
 
         if ($amount > $balance) {
-            header('Location: index.php?route=receipt_entry&bill_id=' . $billId . '&error=' . urlencode('Receipt amount cannot exceed the pending balance.'));
+            header('Location: ' . $redirectBase . '&error=' . urlencode('Receipt amount cannot exceed the pending balance.'));
             exit;
         }
 
@@ -216,7 +257,7 @@ class BillController extends BaseController
         $model->saveReceipt($data);
         $model->updateBillStatus($billId);
 
-        header('Location: index.php?route=receipt_entry&bill_id=' . $billId . '&success=' . urlencode('Receipt saved successfully.'));
+        header('Location: ' . $redirectBase . '&success=' . urlencode('Receipt saved successfully.'));
         exit;
     }
 

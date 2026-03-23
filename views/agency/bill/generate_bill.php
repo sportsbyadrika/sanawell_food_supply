@@ -1,3 +1,8 @@
+<?php
+$selectedRoute = $selectedRoute ?? null;
+$selectedRouteId = (int) ($selectedRouteId ?? 0);
+$routeHeading = $selectedRoute['name'] ?? 'All Routes';
+?>
 <div class="max-w-6xl mx-auto p-4 space-y-6">
 
  <div class="relative rounded-2xl p-6 shadow-xl text-white 
@@ -15,12 +20,12 @@
                 Generate Monthly Bill
             </h2>
             <p class="text-sm text-white/80 mt-1">
-                Manage billing with precision
+                Generated Bills - Route <?= htmlspecialchars($routeHeading, ENT_QUOTES, 'UTF-8') ?>
             </p>
         </div>
 
         <!-- RIGHT BUTTON -->
-        <a href="index.php?route=bill_list"
+        <a href="index.php?route=bill_list<?= $selectedRouteId > 0 ? "&route_id=" . $selectedRouteId : "" ?>"
            class="bg-white/15 hover:bg-white/25 px-4 py-2 rounded-xl text-sm backdrop-blur-md transition shadow-sm">
             View Bills
         </a>
@@ -41,7 +46,7 @@
                         class="mt-1 w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500">
                         <option value="">Select Route</option>
                         <?php foreach($routes as $route): ?>
-                            <option value="<?= $route['id'] ?>">
+                            <option value="<?= $route['id'] ?>" <?= $selectedRouteId === (int) $route['id'] ? 'selected' : '' ?>>
                                 <?= $route['name'] ?>
                             </option>
                         <?php endforeach; ?>
@@ -114,7 +119,7 @@
    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
 
     <div class="p-4 border-b">
-        <h3 class="font-semibold text-gray-700">Generated Bills</h3>
+        <h3 class="font-semibold text-gray-700">Generated Bills - Route <?= htmlspecialchars($routeHeading, ENT_QUOTES, 'UTF-8') ?></h3>
     </div>
 
     <div class="overflow-x-auto">

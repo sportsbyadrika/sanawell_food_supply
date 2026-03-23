@@ -38,6 +38,14 @@ class BillModel extends BaseModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getRouteById($routeId)
+    {
+        $stmt = $this->db->prepare("SELECT id, name FROM routes WHERE id = ? LIMIT 1");
+        $stmt->execute([(int) $routeId]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
     public function createBill($data)
     {
         $stmt = $this->db->prepare("
@@ -62,14 +70,28 @@ class BillModel extends BaseModel
         return $this->db->lastInsertId();
     }
 
-    public function getBills()
+    public function getBills($routeId = null)
     {
-        $stmt = $this->db->query("
-            SELECT b.*, c.name, c.mobile, c.address
+        $sql = "
+            SELECT b.*, c.name, c.mobile, c.address, r.name AS route_name
             FROM bills b
             JOIN customers c ON c.id = b.customer_id
-            ORDER BY b.id DESC
-        ");
+            LEFT JOIN routes r ON r.id = b.route_id
+        ";
+
+        if ($routeId !== null) {
+            $sql .= ' WHERE b.route_id = :route_id';
+        }
+
+        $sql .= ' ORDER BY b.id DESC';
+
+        $stmt = $this->db->prepare($sql);
+
+        if ($routeId !== null) {
+            $stmt->bindValue(':route_id', (int) $routeId, PDO::PARAM_INT);
+        }
+
+        $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -90,35 +112,46 @@ class BillModel extends BaseModel
 
     /**
      * Dashboard summary for receipt entry.
-     *
-     * SQL used:
-     * - Total Demand: SELECT COALESCE(SUM(final_amount), 0) FROM bills
-     * - Total Collection: SELECT COALESCE(SUM(amount), 0) FROM receipts
-     * - Balance: demand - collection
      */
-    public function getBillsSummary()
+    public function getBillsSummary($routeId = null)
     {
-        $query = "
+        $sql = "
             SELECT
-                COALESCE((SELECT SUM(final_amount) FROM bills), 0) AS total_demand,
-                COALESCE((SELECT SUM(amount) FROM receipts), 0) AS total_collection
+                COALESCE(SUM(b.final_amount), 0) AS total_demand,
+                COALESCE(SUM(receipt_totals.total_collection), 0) AS total_collection
+            FROM bills b
+            LEFT JOIN (
+                SELECT bill_id, SUM(amount) AS total_collection
+                FROM receipts
+                GROUP BY bill_id
+            ) receipt_totals ON receipt_totals.bill_id = b.id
         ";
 
-        $stmt = $this->db->prepare($query);
+        if ($routeId !== null) {
+            $sql .= ' WHERE b.route_id = :route_id';
+        }
+
+        $stmt = $this->db->prepare($sql);
+
+        if ($routeId !== null) {
+            $stmt->bindValue(':route_id', (int) $routeId, PDO::PARAM_INT);
+        }
+
         $stmt->execute();
 
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['total_demand' => 0, 'total_collection' => 0];
         $row['balance'] = (float) $row['total_demand'] - (float) $row['total_collection'];
 
         return $row;
     }
 
-    public function getAllBills()
+    public function getAllBills($routeId = null)
     {
         $sql = "
             SELECT
                 b.id,
                 b.customer_id,
+                b.route_id,
                 b.bill_date,
                 b.bill_from,
                 b.bill_to,
@@ -127,22 +160,36 @@ class BillModel extends BaseModel
                 (b.final_amount - COALESCE(SUM(r.amount), 0)) AS balance,
                 c.name AS customer_name,
                 c.mobile,
+                rt.name AS route_name,
                 b.status
             FROM bills b
             JOIN customers c ON c.id = b.customer_id
+            LEFT JOIN routes rt ON rt.id = b.route_id
             LEFT JOIN receipts r ON r.bill_id = b.id
-            GROUP BY b.id, b.customer_id, b.bill_date, b.bill_from, b.bill_to, b.bill_type, b.final_amount, c.name, c.mobile, b.status
+        ";
+
+        if ($routeId !== null) {
+            $sql .= ' WHERE b.route_id = :route_id';
+        }
+
+        $sql .= "
+            GROUP BY b.id, b.customer_id, b.route_id, b.bill_date, b.bill_from, b.bill_to, b.bill_type, b.final_amount, c.name, c.mobile, rt.name, b.status
             ORDER BY b.id DESC
         ";
 
         $stmt = $this->db->prepare($sql);
+
+        if ($routeId !== null) {
+            $stmt->bindValue(':route_id', (int) $routeId, PDO::PARAM_INT);
+        }
+
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
-     * Get only pending bills for receipt entry, optionally filtered by customer/mobile.
+     * Get only pending bills for receipt entry, optionally filtered by route and customer/mobile search.
      * Pending means explicit bill status is Pending OR remaining balance is greater than zero.
      */
     public function getPendingBills($search = null, $routeId = null)
@@ -161,11 +208,14 @@ class BillModel extends BaseModel
                 (b.final_amount - COALESCE(SUM(r.amount), 0)) AS balance,
                 c.name AS customer_name,
                 c.mobile,
+                rt.name AS route_name,
                 b.status
             FROM bills b
             JOIN customers c ON c.id = b.customer_id
+            LEFT JOIN routes rt ON rt.id = b.route_id
             LEFT JOIN receipts r ON r.bill_id = b.id
             WHERE (:search = '' OR c.name LIKE :search_like OR c.mobile LIKE :search_like)
+              AND (:route_id = 0 OR b.route_id = :route_id)
             GROUP BY
                 b.id,
                 b.customer_id,
@@ -177,15 +227,18 @@ class BillModel extends BaseModel
                 b.final_amount,
                 c.name,
                 c.mobile,
+                rt.name,
                 b.status
             HAVING b.status = 'Pending' OR balance > 0
             ORDER BY b.id DESC
         ";
 
         $search = trim((string) $search);
+        $routeId = (int) $routeId;
         $stmt = $this->db->prepare($sql);
         $stmt->bindValue(':search', $search, PDO::PARAM_STR);
         $stmt->bindValue(':search_like', '%' . $search . '%', PDO::PARAM_STR);
+        $stmt->bindValue(':route_id', $routeId, PDO::PARAM_INT);
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -211,9 +264,11 @@ class BillModel extends BaseModel
                 c.name AS customer_name,
                 c.mobile,
                 c.address,
+                rt.name AS route_name,
                 b.status
             FROM bills b
             JOIN customers c ON c.id = b.customer_id
+            LEFT JOIN routes rt ON rt.id = b.route_id
             LEFT JOIN receipts r ON r.bill_id = b.id
             WHERE b.id = ?
             GROUP BY
@@ -228,6 +283,7 @@ class BillModel extends BaseModel
                 c.name,
                 c.mobile,
                 c.address,
+                rt.name,
                 b.status
         ";
 
