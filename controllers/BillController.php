@@ -1,219 +1,230 @@
 <?php
 class BillController extends BaseController
 {
-public function generateBillPage()
-{
-    $model = new BillModel();
+    public function generateBillPage()
+    {
+        $model = new BillModel();
 
-    $data['routes'] = $model->getRoutes();
-    $data['bills'] = $model->getBills();
-    $data['summary'] = $model->getDashboardSummary();
+        $data['routes'] = $model->getRoutes();
+        $data['bills'] = $model->getBills();
+        $data['summary'] = $model->getDashboardSummary();
 
-    return $this->render('agency/bill/generate_bill', $data);
-}
-public function generateBill()
-{
-    $route_id = $_POST['route_id'];
-    $from = $_POST['from_date'];
-    $to = $_POST['to_date'];
-    $bill_type = $_POST['bill_type'];
+        return $this->render('agency/bill/generate_bill', $data);
+    }
 
-    $model = new BillModel();
+    public function generateBill()
+    {
+        $route_id = $_POST['route_id'];
+        $from = $_POST['from_date'];
+        $to = $_POST['to_date'];
+        $bill_type = $_POST['bill_type'];
 
-    
-    $customers = $model->getCustomerWiseData($route_id, $from, $to);
+        $model = new BillModel();
 
-    foreach ($customers as $cust) {
+        $customers = $model->getCustomerWiseData($route_id, $from, $to);
 
-        
-        $bill_id = $model->createBill([
-    'route_id'     => $route_id,
-    'customer_id'  => $cust['customer_id'],
-    'bill_from'    => $from,
-    'bill_to'      => $to,
-    'bill_type'    => $bill_type,
-    'bill_date'    => date('Y-m-d'), 
-    'total_amount' => $cust['total'],
-    'tax_amount'   => 0,
-    'final_amount' => $cust['total']
-]);
-
-        
-        $items = $model->getCustomerItems($cust['customer_id'], $from, $to);
-
-        foreach ($items as $item) {
-            $model->insertBillItem([
-                'bill_id' => $bill_id,
-                'product_id' => $item['product_id'],
-                'qty' => $item['qty'],
-                'amount' => $item['amount']
+        foreach ($customers as $cust) {
+            $bill_id = $model->createBill([
+                'route_id' => $route_id,
+                'customer_id' => $cust['customer_id'],
+                'bill_from' => $from,
+                'bill_to' => $to,
+                'bill_type' => $bill_type,
+                'bill_date' => date('Y-m-d'),
+                'total_amount' => $cust['total'],
+                'tax_amount' => 0,
+                'final_amount' => $cust['total'],
             ]);
+
+            $items = $model->getCustomerItems($cust['customer_id'], $from, $to);
+
+            foreach ($items as $item) {
+                $model->insertBillItem([
+                    'bill_id' => $bill_id,
+                    'product_id' => $item['product_id'],
+                    'qty' => $item['qty'],
+                    'amount' => $item['amount'],
+                ]);
+            }
         }
+
+        header("Location: index.php?route=generate_bill_page");
     }
 
-    header("Location: index.php?route=generate_bill_page");
-}
+    public function billList()
+    {
+        $model = new BillModel();
 
-public function billList()
-{
-    $model = new BillModel();
+        $bills = $model->getAllBills();
 
-    $bills = $model->getAllBills(); // always all bills
-
-    $this->render('agency/bill/bill_list', ['bills' => $bills]);
-}
-
-public function receiptPage()
-{
-    $model = new BillModel();
-
-    $search = $_POST['search'] ?? '';
-    $route_id = $_POST['route_id'] ?? '';
-
-    
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $bills = $model->getPendingBills($search, $route_id);
-    } else {
-        $bills = $model->getPendingBills(); 
+        $this->render('agency/bill/bill_list', ['bills' => $bills]);
     }
 
-    $data = [
-        'routes' => $model->getRoutes(),
-        'bills' => $bills,
-        'receipts' => [],
-        'summary' => $model->getDashboardSummary(),
-    ];
+    public function receiptPage()
+    {
+        $model = new BillModel();
 
-    return $this->render('agency/bill/receipt_page', $data);
-}
+        $search = $_POST['search'] ?? '';
+        $route_id = $_POST['route_id'] ?? '';
 
-public function receiptEntry()
-{
-    $model = new BillModel();
-
-    $bill_id = $_GET['id'] ?? null;
-
-    $bill = [];
-    if ($bill_id) {
-        $bill = $model->getBillById($bill_id);
-    }
-
-    if (!$bill) {
-        $bill = [
-            'id' => '',
-            'customer_name' => '',
-            'mobile' => '',
-            'address' => '',
-            'final_amount' => 0,
-            'balance' => 0
-        ];
-    }
-
-    
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $bills = $model->getPendingBills($search, $route_id);
+        } else {
+            $bills = $model->getPendingBills();
+        }
 
         $data = [
-            'bill_id' => $_POST['bill_id'],
-            'receipt_date' => $_POST['receipt_date'],
-            'amount' => $_POST['amount'],
-            'mode' => $_POST['mode'],
-            'transaction_ref' => $_POST['transaction_ref'],
-            'transaction_date' => $_POST['transaction_date'],
-            'status' => $_POST['status'],
-            'verified_date' => $_POST['verified_date'],
-            'verified_user_id' => $_POST['verified_user_id']
+            'routes' => $model->getRoutes(),
+            'bills' => $bills,
+            'receipts' => [],
+            'summary' => $model->getDashboardSummary(),
         ];
 
-        
-        if ($data['amount'] <= 0) {
-            die("Invalid amount");
+        return $this->render('agency/bill/receipt_page', $data);
+    }
+
+    /**
+     * Receipt entry screen.
+     * - search pending bills by customer/mobile
+     * - load selected bill by bill_id
+     * - auto-fill receipt form using pending balance
+     */
+    public function receiptEntry()
+    {
+        $model = new BillModel();
+
+        $billId = isset($_GET['bill_id']) ? (int) $_GET['bill_id'] : 0;
+        $search = trim($_GET['search'] ?? '');
+        $selectedBill = null;
+        $formError = $_GET['error'] ?? '';
+        $successMessage = $_GET['success'] ?? '';
+        $canSubmitReceipt = false;
+
+        if ($billId > 0) {
+            $selectedBill = $model->getBillById($billId);
+
+            if (!$selectedBill) {
+                $formError = 'Selected bill was not found.';
+            } else {
+                $canSubmitReceipt = (float) $selectedBill['balance'] > 0 && strcasecmp((string) $selectedBill['status'], 'Paid') !== 0;
+
+                if (!$canSubmitReceipt && $successMessage === '') {
+                    $formError = 'Receipts cannot be created for fully paid bills.';
+                }
+            }
         }
 
-        $billCheck = $model->getBillById($data['bill_id']);
+        $summary = $model->getBillsSummary();
+        $pendingBills = $model->getPendingBills($search);
+        $receipts = $billId > 0 ? $model->getReceiptsByBill($billId) : [];
 
-        if (!$billCheck) {
-            die("Invalid bill");
+        $formDefaults = [
+            'bill_id' => $selectedBill['id'] ?? '',
+            'receipt_date' => date('Y-m-d'),
+            'amount' => $selectedBill['balance'] ?? '',
+            'payment_mode' => 'Cash',
+            'status' => 'entry',
+            'transaction_ref' => '',
+            'transaction_date' => '',
+            'verified_date' => '',
+            'verified_user_id' => '',
+        ];
+
+        return $this->render('agency/bill/receipt_entry', [
+            'summary' => $summary,
+            'search' => $search,
+            'pendingBills' => $pendingBills,
+            'bill' => $selectedBill,
+            'receipts' => $receipts,
+            'formDefaults' => $formDefaults,
+            'error' => $formError,
+            'success' => $successMessage,
+            'canSubmitReceipt' => $canSubmitReceipt,
+        ]);
+    }
+
+    public function searchReceipts()
+    {
+        $model = new BillModel();
+
+        $search = $_POST['search'] ?? '';
+        $route_id = $_POST['route_id'] ?? '';
+
+        $data = [
+            'routes' => $model->getRoutes(),
+            'bills' => $model->getPendingBills($search, $route_id),
+            'receipts' => $model->getReceipts($search, $route_id),
+            'summary' => $model->getReceiptSummary($search, $route_id),
+        ];
+
+        return $this->render('agency/bill/receipt_page', $data);
+    }
+
+    /**
+     * Save receipt and update bill status.
+     * - blocks paid/zero-balance bills
+     * - blocks overpayment
+     * - supports partial payment by keeping bill Pending
+     */
+    public function saveReceipt()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: index.php?route=receipt_entry');
+            exit;
         }
 
-        if ($data['amount'] > ($billCheck['balance'] ?? 0)) {
-            die("Amount exceeds balance");
+        $model = new BillModel();
+        $billId = (int) ($_POST['bill_id'] ?? 0);
+        $bill = $billId > 0 ? $model->getBillById($billId) : null;
+
+        if (!$bill) {
+            header('Location: index.php?route=receipt_entry&error=' . urlencode('Invalid bill selected.'));
+            exit;
         }
+
+        $balance = (float) ($bill['balance'] ?? 0);
+        if ($balance <= 0 || strcasecmp((string) $bill['status'], 'Paid') === 0) {
+            header('Location: index.php?route=receipt_entry&error=' . urlencode('Receipt entry is not allowed for paid bills.'));
+            exit;
+        }
+
+        $amount = (float) ($_POST['amount'] ?? 0);
+        if ($amount <= 0) {
+            header('Location: index.php?route=receipt_entry&bill_id=' . $billId . '&error=' . urlencode('Receipt amount must be greater than zero.'));
+            exit;
+        }
+
+        if ($amount > $balance) {
+            header('Location: index.php?route=receipt_entry&bill_id=' . $billId . '&error=' . urlencode('Receipt amount cannot exceed the pending balance.'));
+            exit;
+        }
+
+        $paymentMode = trim($_POST['payment_mode'] ?? 'Cash');
+        $data = [
+            'bill_id' => $billId,
+            'route_id' => $bill['route_id'] ?? null,
+            'receipt_date' => $_POST['receipt_date'] ?? date('Y-m-d'),
+            'amount' => $amount,
+            'payment_mode' => $paymentMode !== '' ? $paymentMode : 'Cash',
+            'transaction_ref' => trim($_POST['transaction_ref'] ?? '') ?: null,
+            'transaction_date' => trim($_POST['transaction_date'] ?? '') ?: null,
+            'status' => $_POST['status'] ?? 'entry',
+            'verified_date' => trim($_POST['verified_date'] ?? '') ?: null,
+            'verified_user_id' => trim($_POST['verified_user_id'] ?? '') ?: null,
+        ];
 
         $model->saveReceipt($data);
-    
-        header("Location: index.php?route=receipt_entry&id=" . $data['bill_id']);
+        $model->updateBillStatus($billId);
+
+        header('Location: index.php?route=receipt_entry&bill_id=' . $billId . '&success=' . urlencode('Receipt saved successfully.'));
         exit;
     }
 
-    
-    $summary = $model->getBillsSummary();
-    if (!$summary) {
-        $summary = [
-            'total_demand' => 0,
-            'total_collection' => 0,
-            'balance' => 0
-        ];
+    public function notifications()
+    {
+        $model = new BillModel();
+        $data['counts'] = $model->getNotificationCounts();
+
+        return $this->render('agency/bill/notifications', $data);
     }
-
-    
-    $receipts = [];
-    if ($bill_id) {
-        $receipts = $model->getReceiptsByBill($bill_id);
-    }
-
-    
-  $this->render('agency/bill/receipt_entry', [
-    'summary' => $summary
-]);
-}
-
-public function searchReceipts()
-{
-    $model = new BillModel();
-
-    $search   = $_POST['search'] ?? '';
-    $route_id = $_POST['route_id'] ?? '';
-
-    $data = [
-        'routes' => $model->getRoutes(),
-        'bills' => $model->getPendingBills($search, $route_id),
-        'receipts' => $model->getReceipts($search, $route_id),
-        'summary' => $model->getReceiptSummary($search, $route_id),
-    ];
-
-    return $this->render('agency/bill/receipt_page', $data);
-}
-
-public function saveReceipt()
-{
-    $model = new BillModel();
-
-        $data = [
-        'bill_id' => $_POST['bill_id'] ?? null,
-        'route_id' => $_POST['route_id'] ?? null,
-        'receipt_date' => $_POST['receipt_date'] ?? date('Y-m-d'),
-        'amount' => $_POST['amount'] ?? 0,
-        'payment_mode' => $_POST['payment_mode'] ?? 'Cash',
-        'transaction_ref' => $_POST['transaction_ref'] ?? null,
-        'transaction_date' => $_POST['transaction_date'] ?? null,
-        'status' => $_POST['status'] ?? 'entry',
-        'verified_date' => $_POST['verified_date'] ?? null,
-        'verified_user_id' => $_SESSION['user_id'] ?? null
-    ];
-
-    $model->saveReceipt($data);
-
-    $search = $_POST['search'] ?? '';
-    $route_id = $_POST['route_id'] ?? '';
-
-    header("Location: index.php?route=receipt_page&success=1&search=$search&route_id=$route_id");
-    exit;
-}
-public function notifications()
-{
-    $model = new BillModel();
-    $data['counts'] = $model->getNotificationCounts();
-
-    return $this->render('agency/bill/notifications', $data);
-}
 }
