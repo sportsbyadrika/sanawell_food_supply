@@ -26,26 +26,7 @@ $selectedRouteName = $selected_route_name ?? ($selectedRoute['name'] ?? 'All Rou
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
-        <form method="GET" action="index.php" class="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto_auto] gap-4 items-end">
-            <input type="hidden" name="route" value="generate_bill_page">
-
-            <div>
-                <label class="text-xs text-gray-500">Route</label>
-                <select name="route_id" class="mt-1 w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                    <option value="0">All Routes</option>
-                    <?php foreach ($routes as $route): ?>
-                        <option value="<?= (int) $route['id'] ?>" <?= $selectedRouteId === (int) $route['id'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($route['name'], ENT_QUOTES, 'UTF-8') ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-            <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-xl hover:bg-blue-700 transition">Apply</button>
-            <a href="index.php?route=generate_bill_page" class="bg-gray-100 text-gray-700 px-5 py-2 rounded-xl hover:bg-gray-200 text-center transition">Reset</a>
-        </form>
-    </div>
+   
 
     <div class="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
         <form method="POST" action="index.php?route=generate_bill">
