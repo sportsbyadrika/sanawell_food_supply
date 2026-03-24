@@ -20,7 +20,7 @@ $routeHeading = $route_id > 0 ? $selectedRouteName : 'All Routes';
 ?>
 
 <div class="max-w-7xl mx-auto mt-6 space-y-6 px-4">
-    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-5 rounded-xl shadow flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="bg-gradient-to-br from-slate-600 via-blue-500 to-slate-600 text-white p-5 rounded-xl shadow flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
             <h1 class="text-xl font-semibold">Pending Bills - <?= htmlspecialchars($routeHeading, ENT_QUOTES, 'UTF-8') ?></h1>
             <p class="text-sm opacity-90">Search filters list. Click Select to load form.</p>
