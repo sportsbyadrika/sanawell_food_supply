@@ -113,7 +113,7 @@ if ($config['environment'] === 'local') {
 }
 private function sendStaffInviteEmail(string $email, string $tempPassword): void
 {
-    $subject = 'You have been added to SanaWell';
+    $subject = 'You have been added to Dew Route';
 
     $message = "
 Hello,
@@ -129,7 +129,7 @@ Temporary Password: {$tempPassword}
 You will be required to change your password on first login.
 
 Regards,
-SanaWell Team
+Dew Route Team
 ";
 
     $headers = "From: no-reply@sanawell.com";

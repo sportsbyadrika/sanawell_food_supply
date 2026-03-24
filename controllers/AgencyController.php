@@ -215,7 +215,7 @@ public function resetAdminPassword(): void
 
 private function sendAgencyApprovalEmail(string $email, string $tempPassword): void
 {
-    $subject = "Your SanaWell Agency is Approved";
+    $subject = "Your Dew Route Agency is Approved";
 
     $message = "
 Hello PackRun Admin,
@@ -231,7 +231,7 @@ Temporary Password: {$tempPassword}
 Please change your password after login.
 
 Regards,
-SanaWell Team
+Dew Route Team
 ";
 
     $headers = "From: no-reply@sanawell.com";

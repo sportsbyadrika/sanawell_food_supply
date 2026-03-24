@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login | SanaWell Product Delivery</title>
+    <title>Login | Dew Route Product Delivery</title>
 
     <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -36,7 +36,7 @@
             text-white p-10">
           
               <h1 class="text-3xl font-bold mb-3">
-  SanaWell Product Delivery
+  Dew Route Product Delivery
 </h1>
 
 <p class="text-slate-100 text-sm leading-relaxed">
@@ -45,7 +45,7 @@
 </p>
 
 <div class="mt-8 text-xs text-slate-200">
-  © 2026 SanaWell
+  © 2026 Dew Route
 </div>
 
             </div>

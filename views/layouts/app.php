@@ -20,7 +20,7 @@ $title = $title ?? $config['app_name'];
             <?php include $viewPath; ?>
         </main>
         <footer class="bg-white border-t border-gray-200 py-4">
-            <div class="container mx-auto px-4 text-sm text-gray-500">&copy; <?= date('Y') ?> SanaWell Product Delivery</div>
+            <div class="container mx-auto px-4 text-sm text-gray-500">&copy; <?= date('Y') ?> Dew Route Product Delivery</div>
         </footer>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
