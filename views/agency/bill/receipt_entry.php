@@ -140,9 +140,13 @@ $routeHeading = $route_id > 0 ? $selectedRouteName : 'All Routes';
                                             <?php if ($isPaid): ?>
                                                 <button type="button" class="bg-gray-200 text-gray-500 px-3 py-1.5 rounded text-xs cursor-not-allowed" disabled>Paid</button>
                                             <?php else: ?>
-                                                <a href="<?= htmlspecialchars($selectUrl, ENT_QUOTES, 'UTF-8') ?>" class="<?= $isSelected ? 'bg-gradient-to-br from-slate-600 via-blue-500 to-slate-600' : 'bg-blue-600 hover:bg-blue-700' ?> text-white px-3 py-1.5 rounded text-xs inline-flex items-center gap-1">
-                                                    <?= $isSelected ? 'Selected' : 'Select' ?>
-                                                </a>
+                                               <a href="<?= htmlspecialchars($selectUrl, ENT_QUOTES, 'UTF-8') ?>"
+   class="inline-block px-3 py-1 text-xs font-medium rounded 
+          <?= $isSelected 
+                ? 'bg-green-500 text-white cursor-default pointer-events-none' 
+                : 'bg-blue-500 text-white hover:bg-blue-600' ?>">
+   <?= $isSelected ? 'Selected' : 'Select' ?>
+</a>
                                             <?php endif; ?>
                                         </td>
                                     </tr>
