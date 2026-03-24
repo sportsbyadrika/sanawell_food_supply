@@ -101,7 +101,7 @@ $routeHeading = $route_id > 0 ? $selectedRouteName : 'All Routes';
                                 <th class="p-3 text-right">Total</th>
                                 <th class="p-3 text-right">Balance</th>
                                 <th class="p-3 text-center">Status</th>
-                                <th class="p-3 text-center">Action</th>
+                                <th class="p-3 text-center w-[120px]">Action</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -141,7 +141,7 @@ $routeHeading = $route_id > 0 ? $selectedRouteName : 'All Routes';
                                                 <button type="button" class="bg-gray-200 text-gray-500 px-3 py-1.5 rounded text-xs cursor-not-allowed" disabled>Paid</button>
                                             <?php else: ?>
                                                <a href="<?= htmlspecialchars($selectUrl, ENT_QUOTES, 'UTF-8') ?>"
-   class="inline-block px-3 py-1 text-xs font-medium rounded 
+   class="inline-block whitespace-nowrap px-3 py-1 text-xs font-medium rounded 
           <?= $isSelected 
                 ? 'bg-green-500 text-white cursor-default pointer-events-none' 
                 : 'bg-blue-500 text-white hover:bg-blue-600' ?>">
