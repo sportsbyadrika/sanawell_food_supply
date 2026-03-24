@@ -21,6 +21,7 @@ class DriverDashboardController extends BaseController
 
     $totalPending = 0;
     $totalDelivered = 0;
+    $totalFailed = 0;
 
    foreach ($routes as &$route) {
 
@@ -28,9 +29,11 @@ class DriverDashboardController extends BaseController
 
     $route['pending_count'] = $counts['pending'];
     $route['delivered_count'] = $counts['delivered'];
+    $route['failed_count'] = $counts['failed'] ?? 0;
 
     $totalPending += $counts['pending'];
     $totalDelivered += $counts['delivered'];
+    $totalFailed += $counts['failed'] ?? 0;
 
     // NEW PRODUCT TOTALS
     $milk = 0;
@@ -72,7 +75,8 @@ $route['curd_total'] = $curd;
     $this->render('agency/driver/driver_dashboard', [
         'routes' => $routes,
         'totalPending' => $totalPending,
-        'totalDelivered' => $totalDelivered
+        'totalDelivered' => $totalDelivered,
+        'totalFailed' => $totalFailed
     ]);
 }
 }

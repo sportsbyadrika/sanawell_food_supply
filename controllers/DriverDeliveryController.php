@@ -60,11 +60,12 @@ public function saveNotDelivered()
     $route_id = $_POST['route_id'];
     $reason = $_POST['reason'];
     $remarks = $_POST['remarks'];
+    $status = ($_POST['status'] ?? 'not_delivered') === 'not_delivered' ? 'not_delivered' : 'not_delivered';
 
     $deliveryModel = new DeliveryModel();
 
     // 1. Update status
-    $deliveryModel->updateStatus($order_id, 'cancelled', $reason, $remarks);
+    $deliveryModel->updateStatus($order_id, $status, $reason, $remarks);
 
     // 2. Insert into daily bill (IMPORTANT)
     if (!$deliveryModel->checkBillExists($order_id)) {
@@ -75,9 +76,11 @@ public function saveNotDelivered()
             $deliveryModel->insertDailyBill([
                 'delivery_order_id' => $order_id,
                 'product_id' => $item['product_id'],
-                'qty' => 0, // ❗ cancelled
+                'qty' => 0,
                 'amount' => 0,
-                'status' => 'cancelled'
+                'status' => 'not_delivered',
+                'reason' => $reason,
+                'remarks' => $remarks,
             ]);
         }
     }
@@ -91,11 +94,12 @@ public function updateStatus()
 {
     $order_id = $_POST['order_id'];
     $route_id = $_POST['route_id'];
+    $status = ($_POST['status'] ?? 'delivered') === 'delivered' ? 'delivered' : 'delivered';
 
     $deliveryModel = new DeliveryModel();
 
     // 1. Update status
-    $deliveryModel->updateStatus($order_id, 'delivered');
+    $deliveryModel->updateStatus($order_id, $status);
 
     // 2. Prevent duplicate bill
     if (!$deliveryModel->checkBillExists($order_id)) {
@@ -108,7 +112,9 @@ public function updateStatus()
                 'product_id' => $item['product_id'],
                 'qty' => $item['quantity'],
                 'amount' => $item['total_amount'],
-                'status' => 'delivered'
+                'status' => 'delivered',
+                'reason' => null,
+                'remarks' => null,
             ]);
         }
     }

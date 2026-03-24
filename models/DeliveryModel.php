@@ -115,15 +115,21 @@ public function getDeliveryCounts($routeId)
     $stmt = $this->db->prepare("
         SELECT 
             COUNT(*) as total,
-            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-            SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) as delivered
+            SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) as delivered,
+            SUM(CASE WHEN status = 'not_delivered' THEN 1 ELSE 0 END) as failed
         FROM delivery_orders
         WHERE route_id = ?
         AND delivery_date = CURDATE()
     ");
 
     $stmt->execute([$routeId]);
-    return $stmt->fetch(PDO::FETCH_ASSOC);
+    $counts = $stmt->fetch(PDO::FETCH_ASSOC);
+    $delivered = (int) ($counts['delivered'] ?? 0);
+    $failed = (int) ($counts['failed'] ?? 0);
+    $total = (int) ($counts['total'] ?? 0);
+    $counts['pending'] = max(0, $total - ($delivered + $failed));
+
+    return $counts;
 }
 
 public function deliveryExists($routeId)
@@ -537,7 +543,7 @@ public function updateStatus($order_id, $status, $reason = null, $remarks = null
 {
     $stmt = $this->db->prepare("
         UPDATE delivery_orders 
-        SET status = ?, cancel_reason = ?, remarks = ?
+        SET status = ?, reason = ?, remarks = ?, delivered_at = NOW()
         WHERE id = ?
     ");
     $stmt->execute([$status, $reason, $remarks, $order_id]);
@@ -559,8 +565,8 @@ public function insertDailyBill($data)
 {
     $stmt = $this->db->prepare("
         INSERT INTO daily_delivery_bill
-        (delivery_order_id, product_id, qty, amount, status)
-        VALUES (?,?,?,?,?)
+        (delivery_order_id, product_id, qty, amount, status, reason, remarks, created_at)
+        VALUES (?,?,?,?,?,?,?,NOW())
     ");
 
     $stmt->execute([
@@ -568,7 +574,9 @@ public function insertDailyBill($data)
         $data['product_id'],
         $data['qty'],
         $data['amount'],
-        $data['status']
+        $data['status'],
+        $data['reason'] ?? null,
+        $data['remarks'] ?? null,
     ]);
 }
 public function checkBillExists($order_id)
