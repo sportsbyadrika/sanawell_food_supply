@@ -90,7 +90,7 @@ $routeHeading = $route_id > 0 ? $selectedRouteName : 'All Routes';
                 </form>
 
                 <div class="overflow-x-auto w-full">
-                    <table class="min-w-[900px] text-sm border border-gray-200 rounded-lg overflow-hidden">
+                    <table class="min-w-[1200px] text-sm border border-gray-200 rounded-lg overflow-hidden">
                         <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
                             <tr>
                                 <th class="p-3 text-left">Bill No</th>
