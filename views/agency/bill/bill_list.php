@@ -9,7 +9,7 @@ $totalBalance = array_sum(array_map(static fn ($bill) => (float) ($bill['balance
 ?>
 <div class="max-w-6xl mx-auto p-4 space-y-6">
     <div class="p-4 md:p-6">
-        <div class="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl p-5 mb-6 shadow-md flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+        <div class="bg-gradient-to-br from-slate-600 via-blue-500 to-slate-600 rounded-2xl p-5 mb-6 shadow-md flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
             <div>
                 <h2 class="text-white text-xl md:text-2xl font-semibold">
                     Bills (<?= $selectedRouteId > 0 ? htmlspecialchars($selectedRouteName, ENT_QUOTES, 'UTF-8') : 'All Routes' ?>)
