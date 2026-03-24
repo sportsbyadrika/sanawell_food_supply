@@ -65,7 +65,7 @@ $routeHeading = $route_id > 0 ? $selectedRouteName : 'All Routes';
                     </div>
                 </div>
 
-                <form method="GET" action="index.php" class="grid md:grid-cols-[220px_1fr_auto_auto] gap-3 mb-4 items-end">
+                <form method="GET" action="index.php" class="grid md:grid-cols-4 gap-3 mb-4 items-end">
                     <input type="hidden" name="route" value="receipt_entry">
 
                     <div>
@@ -89,8 +89,8 @@ $routeHeading = $route_id > 0 ? $selectedRouteName : 'All Routes';
                     <a href="index.php?route=receipt_entry<?= $route_id > 0 ? '&route_id=' . $route_id : '' ?>" class="bg-gray-100 text-gray-700 px-5 py-3 rounded-lg hover:bg-gray-200 text-center">Reset</a>
                 </form>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+                <div class="overflow-x-auto w-full">
+                    <table class="min-w-[900px] text-sm border border-gray-200 rounded-lg overflow-hidden">
                         <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
                             <tr>
                                 <th class="p-3 text-left">Bill No</th>
