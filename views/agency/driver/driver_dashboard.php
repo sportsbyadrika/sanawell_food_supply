@@ -27,8 +27,9 @@ $timing    = $route['type'] ?? '';
 
 $pending   = $route['pending_count'] ?? 0;
 $delivered = $route['delivered_count'] ?? 0;
+$failed    = $route['failed_count'] ?? 0;
 
-$totalCustomers = $pending + $delivered;
+$totalCustomers = $pending + $delivered + $failed;
 
 $progress = $totalCustomers > 0
     ? round(($delivered / $totalCustomers) * 100)

@@ -2,16 +2,22 @@
 <div class="max-w-4xl mx-auto px-4 py-4">
 <div class="flex gap-3 mb-4 text-sm">
 
+<?php
+$totalAssigned = count($deliveries);
+$deliveredCount = count(array_filter($deliveries, fn($d)=>$d['status']=='delivered'));
+$failedCount = count(array_filter($deliveries, fn($d)=>$d['status']=='not_delivered'));
+$pendingCount = max(0, $totalAssigned - ($deliveredCount + $failedCount));
+?>
 <div class="bg-yellow-100 px-3 py-1 rounded">
-Pending: <?= count(array_filter($deliveries, fn($d)=>$d['status']=='pending')) ?>
+Pending: <?= $pendingCount ?>
 </div>
 
 <div class="bg-green-100 px-3 py-1 rounded">
-Delivered: <?= count(array_filter($deliveries, fn($d)=>$d['status']=='delivered')) ?>
+Delivered: <?= $deliveredCount ?>
 </div>
 
 <div class="bg-red-100 px-3 py-1 rounded">
-Failed: <?= count(array_filter($deliveries, fn($d)=>$d['status']=='not_delivered')) ?>
+Failed: <?= $failedCount ?>
 </div>
 
 </div>
@@ -102,6 +108,7 @@ class="text-blue-600 text-sm">
 <form method="POST" action="index.php?route=update_delivery_status" class="flex-1">
     <input type="hidden" name="order_id" value="<?= $delivery['id'] ?>">
     <input type="hidden" name="route_id" value="<?= $route_id ?>">
+    <input type="hidden" name="status" value="delivered">
 
     <button type="submit"
         class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg">
@@ -217,11 +224,12 @@ action="index.php?route=driver_save_not_delivered">
 
 <input type="hidden" name="order_id" id="order_id">
 <input type="hidden" name="route_id" value="<?= $route_id ?>">
+<input type="hidden" name="status" value="not_delivered">
 
 <select name="reason" class="w-full border p-2 mb-3 rounded">
 
 <option value="customer_not_home">Customer Not Home</option>
-<option value="cancelled">Customer Cancelled</option>
+<option value="customer_cancelled">Customer Cancelled</option>
 <option value="address_issue">Address Issue</option>
 <option value="payment_issue">Payment Issue</option>
 
@@ -269,5 +277,4 @@ document.getElementById('reasonModal').classList.add('hidden');
 </script>
 
 </div>
-
 
