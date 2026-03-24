@@ -85,7 +85,7 @@ $routeHeading = $route_id > 0 ? $selectedRouteName : 'All Routes';
                         <input type="text" name="search" value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" placeholder="Search customer name or mobile" class="w-full border p-3 rounded-lg">
                     </div>
 
-                    <button class="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700">Filter</button>
+                    <button class="bg-gradient-to-br from-slate-600 via-blue-500 to-slate-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700">Filter</button>
                     <a href="index.php?route=receipt_entry<?= $route_id > 0 ? '&route_id=' . $route_id : '' ?>" class="bg-gray-100 text-gray-700 px-5 py-3 rounded-lg hover:bg-gray-200 text-center">Reset</a>
                 </form>
 
@@ -140,7 +140,7 @@ $routeHeading = $route_id > 0 ? $selectedRouteName : 'All Routes';
                                             <?php if ($isPaid): ?>
                                                 <button type="button" class="bg-gray-200 text-gray-500 px-3 py-1.5 rounded text-xs cursor-not-allowed" disabled>Paid</button>
                                             <?php else: ?>
-                                                <a href="<?= htmlspecialchars($selectUrl, ENT_QUOTES, 'UTF-8') ?>" class="<?= $isSelected ? 'bg-blue-700' : 'bg-blue-600 hover:bg-blue-700' ?> text-white px-3 py-1.5 rounded text-xs inline-flex items-center gap-1">
+                                                <a href="<?= htmlspecialchars($selectUrl, ENT_QUOTES, 'UTF-8') ?>" class="<?= $isSelected ? 'bg-gradient-to-br from-slate-600 via-blue-500 to-slate-600' : 'bg-blue-600 hover:bg-blue-700' ?> text-white px-3 py-1.5 rounded text-xs inline-flex items-center gap-1">
                                                     <?= $isSelected ? 'Selected' : 'Select' ?>
                                                 </a>
                                             <?php endif; ?>
