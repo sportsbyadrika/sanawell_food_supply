@@ -1,4 +1,4 @@
-<main class="bg-slate-50">
+<div class="bg-slate-50">
   <div class="max-w-6xl mx-auto px-6 mt-4">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 justify-center">
    <a href="index.php?route=agencies&type=all">
