@@ -2,7 +2,7 @@
 // Global configuration values.
 return [
      'environment' => 'local',
-    'app_name' => 'SanaWell Product Delivery',
+    'app_name' => 'Dew Route Product Delivery',
     'base_url' => '',
     'session_timeout' => 1800, // 30 minutes
     'csrf_token_name' => '_csrf_token',

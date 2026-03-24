@@ -28,7 +28,7 @@ $role = isset($user['role_id'])
         <span class="text-white font-bold text-sm tracking-wide">SW</span>
     </div>
     <div class="leading-tight">
-        <p class="text-sm font-semibold text-white">Sanawell Product Delivery</p>
+        <p class="text-sm font-semibold text-white">Dew Route Product Delivery</p>
         <p class="text-xs text-white/90">SaaS Delivery Management</p>
     </div>
 </div>

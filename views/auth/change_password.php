@@ -91,7 +91,7 @@
 
         <!-- Footer -->
         <div class="mt-6 text-center text-xs text-gray-400">
-            SanaWell Product Delivery • Secure Access
+            Dew Route Product Delivery • Secure Access
         </div>
 
     </div>
