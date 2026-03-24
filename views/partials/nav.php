@@ -25,7 +25,7 @@ $role = isset($user['role_id'])
 <!-- LOGO -->
 <div class="flex items-center gap-3">
     <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-slate-600 via-blue-500 to-slate-600 flex items-center justify-center shadow-lg ring-1 ring-white/30">
-        <span class="text-white font-bold text-sm tracking-wide">SW</span>
+        <span class="text-white font-bold text-sm tracking-wide">DR</span>
     </div>
     <div class="leading-tight">
         <p class="text-sm font-semibold text-white">Dew Route Product Delivery</p>
