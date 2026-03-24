@@ -48,7 +48,7 @@ $role = isset($user['role_id'])
 
 <!-- SUPER ADMIN -->
 <?php if ($role === 'super_admin'): ?>
-<a href="index.php?route=agency" class="flex items-center gap-1 hover:text-white transition">
+<a href="index.php?route=agencies" class="flex items-center gap-1 hover:text-white transition">
     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
         d="M3 7h18M3 12h18M3 17h18"/>
