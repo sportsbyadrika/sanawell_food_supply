@@ -89,75 +89,57 @@ $routeHeading = $route_id > 0 ? $selectedRouteName : 'All Routes';
                     <a href="index.php?route=receipt_entry<?= $route_id > 0 ? '&route_id=' . $route_id : '' ?>" class="bg-gray-100 text-gray-700 px-5 py-3 rounded-lg hover:bg-gray-200 text-center">Reset</a>
                 </form>
 
-                <div class="overflow-x-auto w-full">
-                    <table class="min-w-[1200px] text-sm border border-gray-200 rounded-lg overflow-hidden">
-                        <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
-                            <tr>
-                                <th class="p-3 text-left">Bill No</th>
-                                <th class="p-3 text-left">Customer</th>
-                                <th class="p-3 text-left">Route</th>
-                                <th class="p-3 text-left">Mobile</th>
-                                <th class="p-3 text-left">Period</th>
-                                <th class="p-3 text-right">Total</th>
-                                <th class="p-3 text-right">Balance</th>
-                                <th class="p-3 text-center">Status</th>
-                                <th class="p-3 text-center w-[120px]">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            <?php if (!empty($pendingBills)): ?>
-                                <?php foreach ($pendingBills as $pendingBill): ?>
-                                    <?php
-                                    $isPaid = (float) $pendingBill['balance'] <= 0 || strcasecmp((string) $pendingBill['status'], 'Paid') === 0;
-                                    $isSelected = $selectedBillId === (int) $pendingBill['id'];
-                                    $rowClass = $isSelected ? 'bg-blue-50 ring-1 ring-inset ring-blue-200' : 'hover:bg-gray-50';
-                                    $selectUrl = 'index.php?route=receipt_entry&bill_id=' . (int) $pendingBill['id'] . '&route_id=' . (int) ($route_id > 0 ? $route_id : ($pendingBill['route_id'] ?? 0));
-                                    if ($search !== '') {
-                                        $selectUrl .= '&search=' . urlencode($search);
-                                    }
-                                    ?>
-                                    <tr class="<?= $rowClass ?>">
-                                        <td class="p-3">
-                                            <div class="font-medium text-gray-800">BILL-<?= str_pad((string) $pendingBill['id'], 4, '0', STR_PAD_LEFT) ?></div>
-                                            <?php if ($isSelected): ?>
-                                                <div class="text-xs text-blue-700 font-semibold mt-1">Selected bill</div>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="p-3 font-medium text-gray-800"><?= htmlspecialchars($pendingBill['customer_name'], ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td class="p-3 text-gray-600"><?= htmlspecialchars((string) ($pendingBill['route_name'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td class="p-3"><?= htmlspecialchars($pendingBill['mobile'], ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td class="p-3 text-xs text-gray-500"><?= htmlspecialchars(($pendingBill['bill_from'] ?? $pendingBill['bill_date']) . ' to ' . ($pendingBill['bill_to'] ?? $pendingBill['bill_date']), ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td class="p-3 text-right font-semibold">₹ <?= number_format((float) $pendingBill['total'], 2) ?></td>
-                                        <td class="p-3 text-right font-semibold <?= $isPaid ? 'text-green-600' : 'text-red-600' ?>">₹ <?= number_format((float) $pendingBill['balance'], 2) ?></td>
-                                        <td class="p-3 text-center">
-                                            <?php if ($isPaid): ?>
-                                                <span class="inline-flex px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">Paid</span>
-                                            <?php else: ?>
-                                                <span class="inline-flex px-2 py-1 rounded-full text-xs bg-red-100 text-red-700">Pending</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="p-3 text-center">
-                                            <?php if ($isPaid): ?>
-                                                <button type="button" class="bg-gray-200 text-gray-500 px-3 py-1.5 rounded text-xs cursor-not-allowed" disabled>Paid</button>
-                                            <?php else: ?>
-                                               <a href="<?= htmlspecialchars($selectUrl, ENT_QUOTES, 'UTF-8') ?>"
-   class="inline-block whitespace-nowrap px-3 py-1 text-xs font-medium rounded 
-          <?= $isSelected 
-                ? 'bg-green-500 text-white cursor-default pointer-events-none' 
-                : 'bg-blue-500 text-white hover:bg-blue-600' ?>">
-   <?= $isSelected ? 'Selected' : 'Select' ?>
-</a>
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="9" class="p-4 text-center text-gray-500">No pending bills found for the selected route and search.</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <?php if (!empty($pendingBills)): ?>
+                        <?php foreach ($pendingBills as $pendingBill): ?>
+                            <?php
+                            $isPaid = (float) $pendingBill['balance'] <= 0 || strcasecmp((string) $pendingBill['status'], 'Paid') === 0;
+                            $isSelected = $selectedBillId === (int) $pendingBill['id'];
+                            $cardClass = $isSelected
+                                ? 'border-blue-400 bg-blue-50 ring-1 ring-inset ring-blue-200'
+                                : 'border-gray-200 bg-white';
+                            $selectUrl = 'index.php?route=receipt_entry&bill_id=' . (int) $pendingBill['id'] . '&route_id=' . (int) ($route_id > 0 ? $route_id : ($pendingBill['route_id'] ?? 0));
+                            if ($search !== '') {
+                                $selectUrl .= '&search=' . urlencode($search);
+                            }
+                            ?>
+                            <div class="rounded-lg border shadow p-4 space-y-3 <?= $cardClass ?>">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p class="text-base font-bold text-gray-900"><?= htmlspecialchars($pendingBill['customer_name'], ENT_QUOTES, 'UTF-8') ?></p>
+                                        <p class="text-sm text-gray-600">Bill No: BILL-<?= str_pad((string) $pendingBill['id'], 4, '0', STR_PAD_LEFT) ?></p>
+                                    </div>
+                                    <?php if ($isPaid): ?>
+                                        <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">Paid</span>
+                                    <?php else: ?>
+                                        <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">Pending</span>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="space-y-1.5 text-sm text-gray-700">
+                                    <p><span class="font-medium text-gray-600">Mobile:</span> <?= htmlspecialchars($pendingBill['mobile'], ENT_QUOTES, 'UTF-8') ?></p>
+                                    <p><span class="font-medium text-gray-600">Period:</span> <?= htmlspecialchars(($pendingBill['bill_from'] ?? $pendingBill['bill_date']) . ' to ' . ($pendingBill['bill_to'] ?? $pendingBill['bill_date']), ENT_QUOTES, 'UTF-8') ?></p>
+                                    <p><span class="font-medium text-gray-600">Total:</span> ₹ <?= number_format((float) $pendingBill['total'], 2) ?></p>
+                                    <p><span class="font-medium text-gray-600">Balance:</span> <span class="font-semibold text-red-600">₹ <?= number_format((float) $pendingBill['balance'], 2) ?></span></p>
+                                </div>
+
+                                <?php if ($isPaid): ?>
+                                    <button type="button" class="w-full bg-gray-200 text-gray-500 px-4 py-3 rounded-lg text-sm font-medium cursor-not-allowed" disabled>Paid</button>
+                                <?php else: ?>
+                                    <a
+                                        href="<?= htmlspecialchars($selectUrl, ENT_QUOTES, 'UTF-8') ?>"
+                                        class="block w-full text-center px-4 py-3 rounded-lg text-sm font-semibold <?= $isSelected ? 'bg-green-500 text-white cursor-default pointer-events-none' : 'bg-blue-500 text-white hover:bg-blue-600' ?>"
+                                    >
+                                        <?= $isSelected ? 'Selected' : 'Select' ?>
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="md:col-span-2 xl:col-span-3 p-4 text-center text-gray-500 border border-dashed border-gray-300 rounded-lg">
+                            No pending bills found for the selected route and search.
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
