@@ -6,7 +6,6 @@ if (session_status() === PHP_SESSION_NONE) {
 $config = require __DIR__ . '/../../config/config.php';
 $user = $_SESSION['user'] ?? null;
 
-/* ✅ FIX: Convert role_id → role slug */
 $rolesConfig = $config['roles'];
 
 function getRoleSlug($roleId, $rolesConfig) {
@@ -42,14 +41,12 @@ $showAgencyContext = in_array($role, ['agency_admin', 'office_staff'], true);
     </div>
 </div>
 <div class="flex items-center gap-4">
-    <?php if ($showAgencyContext): ?>
-        <div class="<?php echo !empty($agencyNameRaw) ? 'px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full flex items-center gap-1' : 'px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full'; ?>">
-            <?php if (!empty($agencyNameRaw)): ?>
-                <span>🏢</span>
-                <span class="font-semibold"><?php echo $agencyNameSafe; ?></span>
-            <?php else: ?>
-                <span><?php echo $agencyNameSafe; ?></span>
-            <?php endif; ?>
+  <?php if (!empty($agencyNameRaw)): ?>
+    <div class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full flex items-center gap-1">
+        <span>🏢</span>
+        <span class="font-semibold"><?php echo $agencyNameSafe; ?></span>
+    </div>
+<?php endif; ?>
         </div>
     <?php endif; ?>
 <?php if ($user): ?>
