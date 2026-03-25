@@ -1,4 +1,8 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 $config = require __DIR__ . '/../../config/config.php';
 $user = $_SESSION['user'] ?? null;
 
@@ -17,6 +21,10 @@ function getRoleSlug($roleId, $rolesConfig) {
 $role = isset($user['role_id'])
     ? getRoleSlug($user['role_id'], $rolesConfig)
     : ($user['role'] ?? null);
+
+$agencyNameRaw = $_SESSION['agency_name'] ?? '';
+$agencyNameSafe = htmlspecialchars($agencyNameRaw ?: 'No Agency Selected', ENT_QUOTES, 'UTF-8');
+$showAgencyContext = in_array($role, ['agency_admin', 'office_staff'], true);
 ?>
 
 <header class="sticky top-0 z-50 bg-gradient-to-r from-blue-500 to-slate-500">
@@ -30,6 +38,9 @@ $role = isset($user['role_id'])
     <div class="leading-tight">
         <p class="text-sm font-semibold text-white">Dew Route Product Delivery</p>
         <p class="text-xs text-white/90">SaaS Delivery Management</p>
+        <?php if ($showAgencyContext): ?>
+            <p class="text-xs text-white/80">Agency: <?php echo $agencyNameSafe; ?></p>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -250,29 +261,41 @@ Reports
 
 <?php endif; ?>
 
+<div class="flex items-center gap-4">
+    <?php if ($showAgencyContext): ?>
+        <div class="<?php echo !empty($agencyNameRaw) ? 'px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full flex items-center gap-1' : 'px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full'; ?>">
+            <?php if (!empty($agencyNameRaw)): ?>
+                <span>🏢</span>
+                <span class="font-semibold"><?php echo $agencyNameSafe; ?></span>
+            <?php else: ?>
+                <span><?php echo $agencyNameSafe; ?></span>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 
-<!-- LOGOUT -->
-<a href="index.php?route=logout"
-class="flex items-center gap-1 hover:text-white transition">
+    <!-- LOGOUT -->
+    <a href="index.php?route=logout"
+    class="flex items-center gap-1 hover:text-white transition">
 
-<svg xmlns="http://www.w3.org/2000/svg"
-class="w-5 h-5"
-fill="none"
-viewBox="0 0 24 24"
-stroke="currentColor"
-stroke-width="1.8">
+    <svg xmlns="http://www.w3.org/2000/svg"
+    class="w-5 h-5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    stroke-width="1.8">
 
-<path stroke-linecap="round" stroke-linejoin="round"
-d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1
-a2 2 0 01-2 2H5
-a2 2 0 01-2-2V7
-a2 2 0 012-2h6
-a2 2 0 012 2v1"/>
+    <path stroke-linecap="round" stroke-linejoin="round"
+    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1
+    a2 2 0 01-2 2H5
+    a2 2 0 01-2-2V7
+    a2 2 0 012-2h6
+    a2 2 0 012 2v1"/>
 
-</svg>
+    </svg>
 
-Logout
-</a>
+    Logout
+    </a>
+</div>
 
 
 </nav>
