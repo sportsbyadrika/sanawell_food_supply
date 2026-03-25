@@ -22,7 +22,7 @@ $role = isset($user['role_id'])
     ? getRoleSlug($user['role_id'], $rolesConfig)
     : ($user['role'] ?? null);
 
-$agencyNameRaw = $_SESSION['agency_name'] ?? '';
+$agencyNameRaw = $_SESSION['agency']['name'] ?? '';
 $agencyNameSafe = htmlspecialchars($agencyNameRaw ?: 'No Agency Selected', ENT_QUOTES, 'UTF-8');
 $showAgencyContext = in_array($role, ['agency_admin', 'office_staff'], true);
 ?>
