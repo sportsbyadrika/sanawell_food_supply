@@ -46,7 +46,7 @@ $showAgencyContext = in_array($role, ['agency_admin', 'office_staff'], true);
     <div class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full flex items-center gap-1">
         <span>🏢</span>
         <span class="font-semibold"><?php echo $agencyNameSafe; ?></span>
-    </div>
+    
 <?php endif; ?>
         </div>
     
