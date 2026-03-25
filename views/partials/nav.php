@@ -38,12 +38,20 @@ $showAgencyContext = in_array($role, ['agency_admin', 'office_staff'], true);
     <div class="leading-tight">
         <p class="text-sm font-semibold text-white">Dew Route Product Delivery</p>
         <p class="text-xs text-white/90">SaaS Delivery Management</p>
-        <?php if ($showAgencyContext): ?>
-            <p class="text-xs text-white/80">Agency: <?php echo $agencyNameSafe; ?></p>
-        <?php endif; ?>
+        
     </div>
 </div>
-
+<div class="flex items-center gap-4">
+    <?php if ($showAgencyContext): ?>
+        <div class="<?php echo !empty($agencyNameRaw) ? 'px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full flex items-center gap-1' : 'px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full'; ?>">
+            <?php if (!empty($agencyNameRaw)): ?>
+                <span>🏢</span>
+                <span class="font-semibold"><?php echo $agencyNameSafe; ?></span>
+            <?php else: ?>
+                <span><?php echo $agencyNameSafe; ?></span>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 <?php if ($user): ?>
 
 <nav class="ml-auto flex items-center gap-6 text-sm font-medium text-white/90">
@@ -261,17 +269,7 @@ Reports
 
 <?php endif; ?>
 
-<div class="flex items-center gap-4">
-    <?php if ($showAgencyContext): ?>
-        <div class="<?php echo !empty($agencyNameRaw) ? 'px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full flex items-center gap-1' : 'px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full'; ?>">
-            <?php if (!empty($agencyNameRaw)): ?>
-                <span>🏢</span>
-                <span class="font-semibold"><?php echo $agencyNameSafe; ?></span>
-            <?php else: ?>
-                <span><?php echo $agencyNameSafe; ?></span>
-            <?php endif; ?>
-        </div>
-    <?php endif; ?>
+
 
     <!-- LOGOUT -->
     <a href="index.php?route=logout"
