@@ -25,11 +25,14 @@ $notDeliveredCount = 0;
 $pendingCount = 0;
 
 foreach ($deliveries ?? [] as $delivery) {
-    if (($delivery['status'] ?? '') === 'Delivered') {
+
+    $status = strtolower($delivery['status'] ?? '');
+
+    if ($status === 'delivered') {
         $deliveredCount++;
-    } elseif (($delivery['status'] ?? '') === 'Not_delivered') {
+    } elseif ($status === 'not_delivered') {
         $notDeliveredCount++;
-    } elseif (($delivery['status'] ?? '') === 'Pending') {
+    } else {
         $pendingCount++;
     }
 }
