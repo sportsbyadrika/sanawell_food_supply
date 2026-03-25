@@ -20,6 +20,19 @@
 $totalPackets = 0;
 $totalAddedPackets = 0;
 $totalCancelledPackets = 0;
+$deliveredCount = 0;
+$notDeliveredCount = 0;
+$pendingCount = 0;
+
+foreach ($deliveries ?? [] as $delivery) {
+    if (($delivery['status'] ?? '') === 'Delivered') {
+        $deliveredCount++;
+    } elseif (($delivery['status'] ?? '') === 'Not_delivered') {
+        $notDeliveredCount++;
+    } elseif (($delivery['status'] ?? '') === 'Pending') {
+        $pendingCount++;
+    }
+}
 ?>
 
 <div class="max-w-7xl mx-auto px-6 py-6">
@@ -209,6 +222,20 @@ $totalCancelledPackets += $cancelledQty;
 <div class="border rounded-lg px-3 py-2 bg-purple-100">
 <div class="text-xs">TOTAL PACKETS</div>
 <div class="text-lg font-bold"><?= $totalPackets ?></div>
+</div>
+
+<div class="mt-4 grid grid-cols-3 gap-2 text-center text-xs font-semibold">
+    <div class="bg-green-100 text-green-700 p-2 rounded">
+        Delivered <br><?= $deliveredCount ?>
+    </div>
+
+    <div class="bg-red-100 text-red-700 p-2 rounded">
+        Not Delivered <br><?= $notDeliveredCount ?>
+    </div>
+
+    <div class="bg-yellow-100 text-yellow-700 p-2 rounded">
+        Pending <br><?= $pendingCount ?>
+    </div>
 </div>
 
 </div>
