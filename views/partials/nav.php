@@ -1,8 +1,8 @@
+
 <?php
 $config = require __DIR__ . '/../../config/config.php';
 $user = $_SESSION['user'] ?? null;
 
-/* ✅ FIX: Convert role_id → role slug */
 $rolesConfig = $config['roles'];
 
 function getRoleSlug($roleId, $rolesConfig) {
