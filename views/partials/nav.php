@@ -48,7 +48,7 @@ $showAgencyContext = in_array($role, ['agency_admin', 'office_staff'], true);
     </div>
 <?php endif; ?>
         </div>
-    <?php endif; ?>
+    
 <?php if ($user): ?>
 
 <nav class="ml-auto flex items-center gap-6 text-sm font-medium text-white/90">
