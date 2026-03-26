@@ -39,6 +39,7 @@ class VehicleController extends BaseController
         'agency_id' => $agencyId,
         'vehicle_no' => $_POST['vehicle_no'],
         'vehicle_company' => $_POST['vehicle_company'],
+        'vehicle_model' => $_POST['vehicle_model'],
         'vehicle_type' => $_POST['vehicle_type'],
         'fuel_type' => $_POST['fuel_type'],
         'registration_date' => $_POST['registration_date'],
