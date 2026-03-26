@@ -120,13 +120,15 @@ public function getAllByAgency($agencyId)
 
 public function getRoutesWithCustomerCount($agencyId)
 {
-  $sql = "
+  
+$sql = "
 SELECT 
     r.*,
     COUNT(c.id) as total_customers
 FROM routes r
 LEFT JOIN customers c 
-    ON c.route_id = r.id AND c.status = 1
+    ON c.route_id = r.id 
+    AND c.status = 1
 WHERE r.agency_id = ?
 GROUP BY r.id
 ORDER BY r.name ASC
@@ -140,7 +142,6 @@ ORDER BY r.name ASC
 public function findById($id)
 {
     $sql = "SELECT * FROM routes WHERE id = ? LIMIT 1";
-
     $stmt = $this->db->prepare($sql);
     $stmt->execute([$id]);
 
@@ -148,43 +149,44 @@ public function findById($id)
 }
 public function getCustomersByRoute($routeId)
 {
+    // Step 1: Check existing
+    $check = $this->db->prepare("
+        SELECT COUNT(*) FROM route_customers WHERE route_id = ?
+    ");
+    $check->execute([$routeId]);
+    $count = $check->fetchColumn();
 
-// Auto sync route customers
-$sync = $this->db->prepare("
-INSERT INTO route_customers (route_id, customer_id, delivery_order, created_at)
-SELECT
-    cp.route_id,
-    cp.customer_id,
-    ROW_NUMBER() OVER (ORDER BY cp.customer_id),
-    NOW()
-FROM customer_products cp
-LEFT JOIN route_customers rc
-    ON rc.customer_id = cp.customer_id
-    AND rc.route_id = cp.route_id
-WHERE cp.route_id = ?
-AND cp.status = 1
-AND rc.id IS NULL");
+    // Step 2: Sync if empty
+    if ($count == 0) {
 
-$sync->execute([$routeId]);
+        $sync = $this->db->prepare("
+            INSERT INTO route_customers (route_id, customer_id, delivery_order, created_at)
+            SELECT 
+                c.route_id,
+                c.id,
+                ROW_NUMBER() OVER (ORDER BY c.name ASC),
+                NOW()
+            FROM customers c
+            WHERE c.route_id = ?
+            AND c.status = 1
+        ");
+
+        $sync->execute([$routeId]);
+    }
+
+    // Step 3: Fetch
     $stmt = $this->db->prepare("
-SELECT 
-    c.id,
-    c.name,
-    c.address,
-    c.mobile,
-    rc.delivery_order
-FROM route_customers rc
-JOIN customers c 
-    ON c.id = rc.customer_id
-JOIN customer_products cp 
-    ON cp.customer_id = c.id
-WHERE rc.route_id = ?
-AND c.status = 1
-AND cp.status = 1
-AND cp.route_id = rc.route_id
-GROUP BY c.id
-ORDER BY rc.delivery_order ASC
-");
+        SELECT 
+            c.id,
+            c.name,
+            c.address,
+            c.mobile,
+            rc.delivery_order
+        FROM route_customers rc
+        INNER JOIN customers c ON c.id = rc.customer_id
+        WHERE rc.route_id = ?
+        ORDER BY rc.delivery_order ASC
+    ");
 
     $stmt->execute([$routeId]);
 

@@ -28,7 +28,7 @@ class RouteConfigurationController extends BaseController
 {
     Auth::requireAgencyAdmin();
 
-    $routeId = $_GET['id'] ?? null;
+    $routeId = $_GET['route_id'] ?? ($_GET['id'] ?? null);
 
     if (!$routeId) {
         die("Route not found");
@@ -91,7 +91,7 @@ public function updateRouteOrder()
 
         try {
 
-            // Step 1: move selected customer temporarily
+            
             $temp = $db->prepare("
                 UPDATE route_customers
                 SET delivery_order = 0
@@ -99,7 +99,6 @@ public function updateRouteOrder()
             ");
             $temp->execute([$routeId, $customerId]);
 
-            // Step 2: shift other customers
             if ($newOrder < $current) {
 
                 $shift = $db->prepare("
@@ -125,8 +124,7 @@ public function updateRouteOrder()
                 $shift->execute([$routeId, $current, $newOrder]);
             }
 
-            // Step 3: set new position
-            $update = $db->prepare("
+                $update = $db->prepare("
                 UPDATE route_customers
                 SET delivery_order = ?
                 WHERE route_id = ? AND customer_id = ?

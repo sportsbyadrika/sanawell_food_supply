@@ -147,11 +147,39 @@ public function deliveryExists($routeId)
     return $result['total'] > 0;
 }
 
-public function generateDeliveryForRoute($routeId,$driverId,$vehicleId,$tripDate,$tripStartTime)
+public function generateDeliveryForRoute($routeId, $driverId, $vehicleId, $tripDate, $tripStartTime)
 {
     $db = $this->db;
 
-    // Get ACTIVE customers assigned to this route
+        $delete = $db->prepare("
+        DELETE FROM delivery_orders 
+        WHERE route_id = ? AND delivery_date = ?
+    ");
+    $delete->execute([$routeId, $tripDate]);
+
+    
+    $check = $db->prepare("
+        SELECT COUNT(*) FROM route_customers WHERE route_id = ?
+    ");
+    $check->execute([$routeId]);
+    $count = $check->fetchColumn();
+
+    if ($count == 0) {
+        $sync = $db->prepare("
+            INSERT INTO route_customers (route_id, customer_id, delivery_order, created_at)
+            SELECT 
+                c.route_id,
+                c.id,
+                ROW_NUMBER() OVER (ORDER BY c.name ASC),
+                NOW()
+            FROM customers c
+            WHERE c.route_id = ?
+            AND c.status = 1
+        ");
+        $sync->execute([$routeId]);
+    }
+
+    
     $stmt = $db->prepare("
         SELECT rc.customer_id, c.name
         FROM route_customers rc
@@ -165,122 +193,121 @@ public function generateDeliveryForRoute($routeId,$driverId,$vehicleId,$tripDate
     $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (empty($customers)) {
-        return;
+        return; 
     }
 
     $orderNo = 1;
 
     foreach ($customers as $customer) {
 
-        // Create delivery order
+        
         $insertOrder = $db->prepare("
             INSERT INTO delivery_orders
-(route_id, customer_id, driver_id, vehicle_id, order_no, delivery_date, trip_start_time, status, created_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
+            (route_id, customer_id, driver_id, vehicle_id, order_no, delivery_date, trip_start_time, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
         ");
 
-       $insertOrder->execute([
-$routeId,
-$customer['customer_id'],
-$driverId,
-$vehicleId,
-$orderNo,
-$tripDate,
-$tripStartTime
-]);
+        $insertOrder->execute([
+            $routeId,
+            $customer['customer_id'],
+            $driverId,
+            $vehicleId,
+            $orderNo,
+            $tripDate,
+            $tripStartTime
+        ]);
 
         $deliveryOrderId = $db->lastInsertId();
 
-       
-$productStmt = $db->prepare("
-SELECT
-cp.product_id,
-cp.quantity AS normal_qty,
-cp.rate,
-cr.requested_qty
-FROM customer_products cp
-LEFT JOIN change_requests cr
-ON cp.customer_id = cr.customer_id
-AND cp.product_id = cr.product_id
-AND DATE(cr.request_date) = ?
-WHERE cp.route_id = ?
-AND cp.customer_id = ?
-AND cp.status = 1
+        
+       $productStmt = $db->prepare("
+    SELECT 
+        cp.product_id,
+        cp.quantity AS normal_qty,
+        cp.rate,
+        cr.requested_qty
+    FROM customer_products cp
+    LEFT JOIN change_requests cr 
+        ON cp.customer_id = cr.customer_id 
+        AND cp.product_id = cr.product_id
+        AND DATE(cr.request_date) = ?
+    WHERE cp.customer_id = ?
+    AND cp.status = 1
 ");
 
-$productStmt->execute([
-    $tripDate,
-    $routeId,
-    $customer['customer_id']
-]);
+        $productStmt->execute([
+            $tripDate,
+            $routeId,
+            $customer['customer_id']
+        ]);
 
-$products = $productStmt->fetchAll(PDO::FETCH_ASSOC);
+        $products = $productStmt->fetchAll(PDO::FETCH_ASSOC);
 
-foreach ($products as $product) {
+        foreach ($products as $product) {
 
-    $normalQty = $product['normal_qty'];
-    $extraQty  = $product['requested_qty'] ?? 0;
+            $normalQty = $product['normal_qty'];
+            $extraQty  = $product['requested_qty'] ?? 0;
 
-    $totalQty = $normalQty + $extraQty;
-    $total = $totalQty * $product['rate'];
+            $totalQty = $normalQty + $extraQty;
+            $total = $totalQty * $product['rate'];
 
-    $insertItem = $db->prepare("
-        INSERT INTO delivery_order_items
-        (delivery_order_id, product_id, quantity, added_qty, cancelled_qty, rate, total_amount)
-        VALUES (?, ?, ?, ?, 0, ?, ?)
-    ");
+            $insertItem = $db->prepare("
+                INSERT INTO delivery_order_items
+                (delivery_order_id, product_id, quantity, added_qty, cancelled_qty, rate, total_amount)
+                VALUES (?, ?, ?, ?, 0, ?, ?)
+            ");
 
-    $insertItem->execute([
-        $deliveryOrderId,
-        $product['product_id'],
-        $normalQty,
-        $extraQty,
-        $product['rate'],
-        $total
-    ]);
-    // Insert products added via change_requests but not in subscription
-$extraStmt = $db->prepare("
-SELECT cr.product_id, cr.requested_qty
-FROM change_requests cr
-WHERE cr.customer_id = ?
-AND DATE(cr.request_date) = ?
-AND cr.product_id NOT IN (
-    SELECT product_id
-    FROM customer_products
-    WHERE customer_id = ?
-)
-");
+            $insertItem->execute([
+                $deliveryOrderId,
+                $product['product_id'],
+                $normalQty,
+                $extraQty,
+                $product['rate'],
+                $total
+            ]);
+        }
 
-$extraStmt->execute([
-    $customer['customer_id'],
-    $tripDate,
-    $customer['customer_id']
-]);
+        // ✅ 6. Extra products (only in change_requests, not subscription)
+        $extraStmt = $db->prepare("
+            SELECT cr.product_id, cr.requested_qty
+            FROM change_requests cr
+            WHERE cr.customer_id = ?
+            AND DATE(cr.request_date) = ?
+            AND cr.product_id NOT IN (
+                SELECT product_id FROM customer_products WHERE customer_id = ?
+            )
+        ");
 
-$extraProducts = $extraStmt->fetchAll(PDO::FETCH_ASSOC);
+        $extraStmt->execute([
+            $customer['customer_id'],
+            $tripDate,
+            $customer['customer_id']
+        ]);
 
-foreach ($extraProducts as $extra) {
+        $extraProducts = $extraStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $rate = 0; // fallback rate
-    $total = $extra['requested_qty'] * $rate;
+        foreach ($extraProducts as $extra) {
 
-    $insertItem = $db->prepare("
-        INSERT INTO delivery_order_items
-        (delivery_order_id, product_id, quantity, added_qty, cancelled_qty, rate, total_amount)
-        VALUES (?, ?, 0, ?, 0, ?, ?)
-    ");
+            $rate = 0; // fallback (optional: fetch actual rate)
+            $total = $extra['requested_qty'] * $rate;
 
-    $insertItem->execute([
-        $deliveryOrderId,
-        $extra['product_id'],
-        $extra['requested_qty'],
-        $rate,
-        $total
-    ]);
-}
+            $insertItem = $db->prepare("
+                INSERT INTO delivery_order_items
+                (delivery_order_id, product_id, quantity, added_qty, cancelled_qty, rate, total_amount)
+                VALUES (?, ?, 0, ?, 0, ?, ?)
+            ");
+
+            $insertItem->execute([
+                $deliveryOrderId,
+                $extra['product_id'],
+                $extra['requested_qty'],
+                $rate,
+                $total
+            ]);
+        }
+
         $orderNo++;
-}
-}
+    }
 }
 public function getDeliveriesByRoute($routeId)
 {
