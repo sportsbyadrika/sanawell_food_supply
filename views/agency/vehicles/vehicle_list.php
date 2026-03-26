@@ -66,12 +66,12 @@
 <td class="px-5 py-3"><?= htmlspecialchars($vehicle['insurance_valid_upto'] ?? '-') ?></td>
                    <td class="px-5 py-3 text-center space-x-2">
 
-<a href="index.php?route=vehicles/edit&id=<?php echo $vehicle['vehicle_no']; ?>"
+<a href="index.php?route=vehicle_edit&id=<?php echo (int)$vehicle['id']; ?>"
 class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-md hover:bg-blue-200 transition">
 Edit
 </a>
 
-<a href="index.php?route=vehicles/delete&id=<?php echo $vehicle['vehicle_no']; ?>"
+<a href="index.php?route=vehicle_delete&id=<?php echo (int)$vehicle['id']; ?>"
 onclick="return confirm('Delete this vehicle?')"
 class="bg-red-100 text-red-700 text-xs px-3 py-1 rounded-md hover:bg-red-200 transition">
 Delete

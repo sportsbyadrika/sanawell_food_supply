@@ -25,27 +25,91 @@ class VehicleController extends BaseController
 
     public function store() 
     {
-    Auth::requireAgencyAdmin();
+        Auth::requireAgencyAdmin();
 
-   $agencyId = $_SESSION['user']['agency_id'] ?? null;
+        $agencyId = $_SESSION['user']['agency_id'] ?? null;
 
-    if (!$agencyId) {
-        die("Agency not found. Please login again.");
+        if (!$agencyId) {
+            die("Agency not found. Please login again.");
+        }
+
+        $vehicleModel = new VehicleModel();
+
+        $vehicleModel->createVehicle([
+            'agency_id' => $agencyId,
+            'vehicle_no' => $_POST['vehicle_no'],
+            'vehicle_company' => $_POST['vehicle_company'],
+            'vehicle_model' => $_POST['vehicle_model'],
+            'vehicle_type' => $_POST['vehicle_type'],
+            'fuel_type' => $_POST['fuel_type'],
+            'registration_date' => $_POST['registration_date'],
+            'insurance_valid_upto' => $_POST['insurance_valid_upto']
+        ]);
+
+        header("Location: index.php?route=vehicles");
+        exit;
     }
 
-    $vehicleModel = new VehicleModel();
+    public function edit()
+    {
+        Auth::requireAgencyAdmin();
 
-    $vehicleModel->createVehicle([
-        'agency_id' => $agencyId,
-        'vehicle_no' => $_POST['vehicle_no'],
-        'vehicle_company' => $_POST['vehicle_company'],
-        'vehicle_model' => $_POST['vehicle_model'],
-        'vehicle_type' => $_POST['vehicle_type'],
-        'fuel_type' => $_POST['fuel_type'],
-        'registration_date' => $_POST['registration_date'],
-        'insurance_valid_upto' => $_POST['insurance_valid_upto']
-    ]);
+        $id = (int)($_GET['id'] ?? 0);
+        if (!$id) {
+            header("Location: index.php?route=vehicles");
+            exit;
+        }
 
-    header("Location: index.php?route=vehicles");
-}
+        $vehicleModel = new VehicleModel();
+        $vehicle = $vehicleModel->findById($id);
+
+        if (!$vehicle) {
+            header("Location: index.php?route=vehicles");
+            exit;
+        }
+
+        $this->render('agency/vehicles/vehicle_form', [
+            'title' => 'Edit Vehicle',
+            'vehicle' => $vehicle
+        ]);
+    }
+
+    public function update()
+    {
+        Auth::requireAgencyAdmin();
+
+        $id = (int)($_POST['id'] ?? 0);
+        if (!$id) {
+            header("Location: index.php?route=vehicles");
+            exit;
+        }
+
+        $vehicleModel = new VehicleModel();
+        $vehicleModel->updateVehicle($id, [
+            'vehicle_no' => $_POST['vehicle_no'] ?? '',
+            'vehicle_company' => $_POST['vehicle_company'] ?? '',
+            'vehicle_model' => $_POST['vehicle_model'] ?? '',
+            'vehicle_type' => $_POST['vehicle_type'] ?? '',
+            'fuel_type' => $_POST['fuel_type'] ?? '',
+            'registration_date' => $_POST['registration_date'] ?? null,
+            'insurance_valid_upto' => $_POST['insurance_valid_upto'] ?? null,
+        ]);
+
+        header("Location: index.php?route=vehicles");
+        exit;
+    }
+
+    public function delete()
+    {
+        Auth::requireAgencyAdmin();
+
+        $id = (int)($_GET['id'] ?? 0);
+        if ($id) {
+            $vehicleModel = new VehicleModel();
+            $vehicleModel->deleteVehicle($id);
+        }
+
+        header("Location: index.php?route=vehicles");
+        exit;
+    }
 }
