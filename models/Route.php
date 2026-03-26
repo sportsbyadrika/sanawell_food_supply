@@ -121,16 +121,13 @@ public function getAllByAgency($agencyId)
 public function getRoutesWithCustomerCount($agencyId)
 {
   $sql = "
-SELECT
+SELECT 
     r.*,
-    COUNT(DISTINCT c.id) as total_customers
+    COUNT(c.id) as total_customers
 FROM routes r
-LEFT JOIN customer_products cp 
-    ON r.id = cp.route_id AND cp.status = 1
-LEFT JOIN customers c
-    ON c.id = cp.customer_id
+LEFT JOIN customers c 
+    ON c.route_id = r.id AND c.status = 1
 WHERE r.agency_id = ?
-AND (c.status = 1 OR c.status IS NULL)
 GROUP BY r.id
 ORDER BY r.name ASC
 ";
