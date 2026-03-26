@@ -116,6 +116,9 @@ $routes = [
 'vehicles'=>[VehicleController::class,'index'],
 'vehicle_create'=>[VehicleController::class,'create'],
 'vehicle_store'=>[VehicleController::class,'store'],
+'vehicle_edit'=>[VehicleController::class,'edit'],
+'vehicle_update'=>[VehicleController::class,'update'],
+'vehicle_delete'=>[VehicleController::class,'delete'],
 'update_delivery_status' => [DriverDeliveryController::class, 'updateStatus'],
 
 
