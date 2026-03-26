@@ -40,11 +40,11 @@
                 <tr class="hover:bg-gray-50 transition">
 
                     <td class="px-5 py-3 font-medium text-gray-800">
-                        <?= htmlspecialchars($vehicle['vehicle_no']) ?>
+                         <?= htmlspecialchars($vehicle['vehicle_no'] ?? '-') ?>
                     </td>
 
                     <td class="px-5 py-3 text-gray-700">
-                        <?= htmlspecialchars($vehicle['vehicle_company']) ?>
+                         <?= htmlspecialchars($vehicle['vehicle_company'] ?? '-') ?>
                     </td>
 
                     <td class="px-5 py-3 text-gray-700">
@@ -53,17 +53,17 @@
 
                     <td class="px-5 py-3">
                         <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">
-                            <?= htmlspecialchars($vehicle['vehicle_type']) ?>
+                            <?= htmlspecialchars($vehicle['vehicle_type'] ?? '-') ?>
                         </span>
                     </td>
 
                     <td class="px-5 py-3">
                         <span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full">
-                            <?= htmlspecialchars($vehicle['fuel_type']) ?>
+                            <?= htmlspecialchars($vehicle['fuel_type'] ?? '-') ?>
                         </span>
                     </td>
-<td class="px-5 py-3"><?= $vehicle['registration_date'] ?></td>
-<td class="px-5 py-3"><?= $vehicle['insurance_valid_upto'] ?></td>
+<td class="px-5 py-3"><?= htmlspecialchars($vehicle['registration_date'] ?? '-') ?></td>
+<td class="px-5 py-3"><?= htmlspecialchars($vehicle['insurance_valid_upto'] ?? '-') ?></td>
                    <td class="px-5 py-3 text-center space-x-2">
 
 <a href="index.php?route=vehicles/edit&id=<?php echo $vehicle['vehicle_no']; ?>"

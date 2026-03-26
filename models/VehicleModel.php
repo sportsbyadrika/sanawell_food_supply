@@ -11,11 +11,17 @@ class VehicleModel
 
   public function getVehicles($agencyId = null)
 {
-    $sql = "SELECT 
-                id,
-                vehicle_no
-            FROM vehicles 
-            WHERE status = 1";
+   $sql = "SELECT
+            id,
+            vehicle_no,
+            vehicle_model,
+            vehicle_company,
+            vehicle_type,
+            fuel_type,
+            registration_date,
+            insurance_valid_upto
+        FROM vehicles
+        WHERE status = 1";
 
     if ($agencyId) {
         $sql .= " AND agency_id = ?";
