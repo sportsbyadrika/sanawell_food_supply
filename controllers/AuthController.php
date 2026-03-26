@@ -61,6 +61,7 @@ class AuthController extends BaseController
     $userModel->updateLastLogin($user['id']);
 
     Auth::login($user);
+    
 
     $_SESSION['user'] = [
         'id'        => $user['id'],
