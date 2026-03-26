@@ -125,12 +125,10 @@ SELECT
     r.*,
     COUNT(DISTINCT c.id) as total_customers
 FROM routes r
-LEFT JOIN customer_products cp 
-    ON r.id = cp.route_id AND cp.status = 1
 LEFT JOIN customers c
-    ON c.id = cp.customer_id
+    ON c.route_id = r.id
+    AND c.status = 1
 WHERE r.agency_id = ?
-AND (c.status = 1 OR c.status IS NULL)
 GROUP BY r.id
 ORDER BY r.name ASC
 ";
@@ -156,16 +154,16 @@ public function getCustomersByRoute($routeId)
 $sync = $this->db->prepare("
 INSERT INTO route_customers (route_id, customer_id, delivery_order, created_at)
 SELECT
-    cp.route_id,
-    cp.customer_id,
-    ROW_NUMBER() OVER (ORDER BY cp.customer_id),
+    c.route_id,
+    c.id,
+    ROW_NUMBER() OVER (ORDER BY c.id),
     NOW()
-FROM customer_products cp
+FROM customers c
 LEFT JOIN route_customers rc
-    ON rc.customer_id = cp.customer_id
-    AND rc.route_id = cp.route_id
-WHERE cp.route_id = ?
-AND cp.status = 1
+    ON rc.customer_id = c.id
+    AND rc.route_id = c.route_id
+WHERE c.route_id = ?
+AND c.status = 1
 AND rc.id IS NULL");
 
 $sync->execute([$routeId]);
@@ -179,13 +177,8 @@ SELECT
 FROM route_customers rc
 JOIN customers c 
     ON c.id = rc.customer_id
-JOIN customer_products cp 
-    ON cp.customer_id = c.id
 WHERE rc.route_id = ?
 AND c.status = 1
-AND cp.status = 1
-AND cp.route_id = rc.route_id
-GROUP BY c.id
 ORDER BY rc.delivery_order ASC
 ");
 

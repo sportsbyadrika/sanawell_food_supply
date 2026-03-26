@@ -28,7 +28,7 @@ class RouteConfigurationController extends BaseController
 {
     Auth::requireAgencyAdmin();
 
-    $routeId = $_GET['id'] ?? null;
+    $routeId = $_GET['route_id'] ?? ($_GET['id'] ?? null);
 
     if (!$routeId) {
         die("Route not found");
