@@ -14,8 +14,8 @@ class VehicleModel
    $sql = "SELECT
             id,
             vehicle_no,
-            vehicle_model,
             vehicle_company,
+             vehicle_model,
             vehicle_type,
             fuel_type,
             registration_date,
@@ -39,14 +39,15 @@ class VehicleModel
 {
     $stmt = $this->db->prepare("
         INSERT INTO vehicles
-        (agency_id,vehicle_no, vehicle_company, vehicle_type, fuel_type, registration_date, insurance_valid_upto)
-        VALUES (?, ?, ?, ?, ?, ?,?)
+        (agency_id,vehicle_no, vehicle_model, vehicle_company, vehicle_type, fuel_type, registration_date, insurance_valid_upto)
+        VALUES (?, ?, ?, ?, ?, ?,?,?)
     ");
 
     $stmt->execute([
         $data['agency_id'],
         $data['vehicle_no'],
         $data['vehicle_company'],
+        $data['vehicle_model'],
         $data['vehicle_type'],
         $data['fuel_type'],
         $data['registration_date'],
