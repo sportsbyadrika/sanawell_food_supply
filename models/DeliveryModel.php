@@ -151,35 +151,31 @@ public function generateDeliveryForRoute($routeId, $driverId, $vehicleId, $tripD
 {
     $db = $this->db;
 
-        $delete = $db->prepare("
-        DELETE FROM delivery_orders 
+    // 1. Delete existing deliveries for this route & date
+    $delete = $db->prepare("
+        DELETE FROM delivery_orders
         WHERE route_id = ? AND delivery_date = ?
     ");
     $delete->execute([$routeId, $tripDate]);
 
-    
-    $check = $db->prepare("
-        SELECT COUNT(*) FROM route_customers WHERE route_id = ?
+    // 2. ALWAYS refresh route_customers (FIXED ISSUE)
+    $deleteRC = $db->prepare("DELETE FROM route_customers WHERE route_id = ?");
+    $deleteRC->execute([$routeId]);
+
+    $sync = $db->prepare("
+        INSERT INTO route_customers (route_id, customer_id, delivery_order, created_at)
+        SELECT
+            c.route_id,
+            c.id,
+            ROW_NUMBER() OVER (ORDER BY c.name ASC),
+            NOW()
+        FROM customers c
+        WHERE c.route_id = ?
+        AND c.status = 1
     ");
-    $check->execute([$routeId]);
-    $count = $check->fetchColumn();
+    $sync->execute([$routeId]);
 
-    if ($count == 0) {
-        $sync = $db->prepare("
-            INSERT INTO route_customers (route_id, customer_id, delivery_order, created_at)
-            SELECT 
-                c.route_id,
-                c.id,
-                ROW_NUMBER() OVER (ORDER BY c.name ASC),
-                NOW()
-            FROM customers c
-            WHERE c.route_id = ?
-            AND c.status = 1
-        ");
-        $sync->execute([$routeId]);
-    }
-
-    
+    // 3. Fetch customers for route
     $stmt = $db->prepare("
         SELECT rc.customer_id, c.name
         FROM route_customers rc
@@ -188,19 +184,18 @@ public function generateDeliveryForRoute($routeId, $driverId, $vehicleId, $tripD
         AND c.status = 1
         ORDER BY rc.delivery_order ASC
     ");
-
     $stmt->execute([$routeId]);
     $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (empty($customers)) {
-        return; 
+        return;
     }
 
     $orderNo = 1;
 
     foreach ($customers as $customer) {
 
-        
+        // 4. Insert delivery order
         $insertOrder = $db->prepare("
             INSERT INTO delivery_orders
             (route_id, customer_id, driver_id, vehicle_id, order_no, delivery_date, trip_start_time, status, created_at)
@@ -219,29 +214,33 @@ public function generateDeliveryForRoute($routeId, $driverId, $vehicleId, $tripD
 
         $deliveryOrderId = $db->lastInsertId();
 
-        
-       $productStmt = $db->prepare("
-    SELECT 
-        cp.product_id,
-        cp.quantity AS normal_qty,
-        cp.rate,
-        cr.requested_qty
-    FROM customer_products cp
-    LEFT JOIN change_requests cr 
-        ON cp.customer_id = cr.customer_id 
-        AND cp.product_id = cr.product_id
-        AND DATE(cr.request_date) = ?
-    WHERE cp.customer_id = ?
-    AND cp.status = 1
-");
+        // 5. Get customer products
+        $productStmt = $db->prepare("
+            SELECT
+                cp.product_id,
+                cp.quantity AS normal_qty,
+                cp.rate,
+                cr.requested_qty
+            FROM customer_products cp
+            LEFT JOIN change_requests cr
+                ON cp.customer_id = cr.customer_id
+                AND cp.product_id = cr.product_id
+                AND DATE(cr.request_date) = ?
+            WHERE cp.customer_id = ?
+            AND cp.status = 1
+        ");
 
         $productStmt->execute([
             $tripDate,
-            $routeId,
             $customer['customer_id']
         ]);
 
         $products = $productStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // ✅ Skip customers with no products
+        if (empty($products)) {
+            continue;
+        }
 
         foreach ($products as $product) {
 
@@ -249,7 +248,7 @@ public function generateDeliveryForRoute($routeId, $driverId, $vehicleId, $tripD
             $extraQty  = $product['requested_qty'] ?? 0;
 
             $totalQty = $normalQty + $extraQty;
-            $total = $totalQty * $product['rate'];
+            $total    = $totalQty * $product['rate'];
 
             $insertItem = $db->prepare("
                 INSERT INTO delivery_order_items
@@ -267,7 +266,7 @@ public function generateDeliveryForRoute($routeId, $driverId, $vehicleId, $tripD
             ]);
         }
 
-        // ✅ 6. Extra products (only in change_requests, not subscription)
+        // 6. Extra products (only from change_requests)
         $extraStmt = $db->prepare("
             SELECT cr.product_id, cr.requested_qty
             FROM change_requests cr
@@ -288,7 +287,10 @@ public function generateDeliveryForRoute($routeId, $driverId, $vehicleId, $tripD
 
         foreach ($extraProducts as $extra) {
 
-            $rate = 0; // fallback (optional: fetch actual rate)
+            $rateStmt = $db->prepare("SELECT rate FROM products WHERE id = ?");
+            $rateStmt->execute([$extra['product_id']]);
+            $rate = $rateStmt->fetchColumn() ?? 0;
+
             $total = $extra['requested_qty'] * $rate;
 
             $insertItem = $db->prepare("
