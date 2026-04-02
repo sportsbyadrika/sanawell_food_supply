@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum DeliveryStatus {
+  pending
+  delivered
+  not_delivered
+}
+
+model Role {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
+
+  @@map("roles")
+}
+
+model Agency {
+  id          Int       @id @default(autoincrement())
+  name        String
+  code        String    @unique
+  isActive    Boolean   @default(true)
+  users       User[]
+  customers   Customer[]
+  products    Product[]
+  routes      Route[]
+  deliveries  DeliveryOrder[]
+  bills       Bill[]
+  receipts    Receipt[]
+  createdAt   DateTime  @default(now())
+
+  @@map("agencies")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  agencyId     Int?
+  roleId       Int
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  phone        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  agency       Agency?  @relation(fields: [agencyId], references: [id])
+  role         Role     @relation(fields: [roleId], references: [id])
+  driverRoutes Route[]  @relation("DriverRoutes")
+
+  @@map("users")
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  agencyId    Int
+  name        String
+  sku         String
+  price       Decimal  @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  agency      Agency   @relation(fields: [agencyId], references: [id])
+  orderItems  DeliveryOrderItem[]
+
+  @@unique([agencyId, sku])
+  @@map("products")
+}
+
+model Customer {
+  id          Int      @id @default(autoincrement())
+  agencyId    Int
+  routeId     Int?
+  name        String
+  email       String?
+  phone       String?
+  address     String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  agency      Agency   @relation(fields: [agencyId], references: [id])
+  route       Route?   @relation(fields: [routeId], references: [id])
+  orders      DeliveryOrder[]
+
+  @@map("customers")
+}
+
+model Route {
+  id            Int       @id @default(autoincrement())
+  agencyId      Int
+  driverId      Int?
+  name          String
+  vehicleNumber String?
+  isActive      Boolean   @default(true)
+
+  agency        Agency    @relation(fields: [agencyId], references: [id])
+  driver        User?     @relation("DriverRoutes", fields: [driverId], references: [id])
+  customers     Customer[]
+  orders        DeliveryOrder[]
+
+  @@map("routes")
+}
+
+model DeliveryOrder {
+  id            Int             @id @default(autoincrement())
+  agencyId      Int
+  routeId       Int
+  customerId    Int
+  orderDate     DateTime
+  status        DeliveryStatus  @default(pending)
+  failureReason String?
+  createdAt     DateTime        @default(now())
+
+  agency        Agency          @relation(fields: [agencyId], references: [id])
+  route         Route           @relation(fields: [routeId], references: [id])
+  customer      Customer        @relation(fields: [customerId], references: [id])
+  items         DeliveryOrderItem[]
+  bill          Bill?
+
+  @@map("delivery_orders")
+}
+
+model DeliveryOrderItem {
+  id              Int           @id @default(autoincrement())
+  deliveryOrderId Int
+  productId       Int
+  quantity        Int
+  unitPrice       Decimal       @db.Decimal(10, 2)
+
+  deliveryOrder   DeliveryOrder @relation(fields: [deliveryOrderId], references: [id])
+  product         Product       @relation(fields: [productId], references: [id])
+
+  @@map("delivery_order_items")
+}
+
+model Bill {
+  id              Int            @id @default(autoincrement())
+  agencyId        Int
+  deliveryOrderId Int            @unique
+  amount          Decimal        @db.Decimal(10, 2)
+  status          String         @default("unpaid")
+  dueDate         DateTime?
+  createdAt       DateTime       @default(now())
+
+  agency          Agency         @relation(fields: [agencyId], references: [id])
+  deliveryOrder   DeliveryOrder  @relation(fields: [deliveryOrderId], references: [id])
+  receipts        Receipt[]
+
+  @@map("bills")
+}
+
+model Receipt {
+  id          Int      @id @default(autoincrement())
+  agencyId    Int
+  billId      Int
+  amount      Decimal  @db.Decimal(10, 2)
+  paidAt      DateTime @default(now())
+  method      String?
+
+  agency      Agency   @relation(fields: [agencyId], references: [id])
+  bill        Bill     @relation(fields: [billId], references: [id])
+
+  @@map("receipts")
+}
