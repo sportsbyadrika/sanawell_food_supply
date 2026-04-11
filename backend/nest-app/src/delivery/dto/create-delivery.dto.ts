@@ -1,8 +1,20 @@
-import { IsArray, IsDateString, IsNumber } from 'class-validator';
+import { IsDateString, IsNumber, IsOptional } from 'class-validator';
 
 export class CreateDeliveryDto {
-  @IsNumber() agencyId!: number;
-  @IsNumber() routeId!: number;
-  @IsDateString() orderDate!: string;
-  @IsArray() customerIds!: number[];
+  @IsNumber()
+  route_id: number;
+
+  @IsNumber()
+  customer_ids: number[];
+
+  @IsDateString()
+  delivery_date: string;
+
+  @IsOptional()
+  @IsNumber()
+  driver_id?: number;
+
+  @IsOptional()
+  @IsNumber()
+  vehicle_id?: number;
 }

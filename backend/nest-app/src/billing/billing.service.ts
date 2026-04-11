@@ -5,20 +5,38 @@ import { PrismaService } from '../prisma/prisma.service';
 export class BillingService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async generateBill(deliveryOrderId: number, amount: number, agencyId: number) {
-    return this.prisma.bill.create({ data: { deliveryOrderId, amount, agencyId } });
-  }
+ async generateBill(
+  customerId: number,
+  totalAmount: number,
+  routeId?: number,
+) {
+  return this.prisma.bill.create({
+    data: {
+      customer_id: customerId,
+      total_amount: totalAmount,
+      bill_date: new Date(),
+      route_id: routeId,
+    },
+  });
+}
 
-  list(agencyId?: number) {
-    return this.prisma.bill.findMany({ where: agencyId ? { agencyId } : undefined, include: { receipts: true, deliveryOrder: true } });
-  }
+  async list(customerId?: number) {
+  return this.prisma.bill.findMany({
+    where: customerId
+      ? {
+          customer_id: customerId,
+        }
+      : undefined,
 
-  paymentTracking(agencyId: number) {
-    return this.prisma.receipt.groupBy({
-      by: ['agencyId'],
-      where: { agencyId },
-      _sum: { amount: true },
-      _count: { id: true },
-    });
-  }
+  
+  });
+}
+async paymentTracking(agencyId: number) {
+  return this.prisma.bill.findMany({
+    where: {
+      customer_id: agencyId,
+    },
+   
+  });
+}
 }

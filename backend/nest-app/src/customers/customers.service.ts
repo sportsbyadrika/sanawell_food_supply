@@ -5,7 +5,33 @@ import { CreateCustomerDto } from './dto/create-customer.dto';
 @Injectable()
 export class CustomersService {
   constructor(private readonly prisma: PrismaService) {}
-  create(dto: CreateCustomerDto) { return this.prisma.customer.create({ data: dto }); }
-  findAll(agencyId?: number) { return this.prisma.customer.findMany({ where: agencyId ? { agencyId } : undefined }); }
-  assignRoute(customerId: number, routeId: number) { return this.prisma.customer.update({ where: { id: customerId }, data: { routeId } }); }
+
+  create(dto: CreateCustomerDto) {
+  const data: any = {
+    name: dto.name,
+    address: dto.address,
+    agency_id: dto.agencyId,
+  };
+
+  if (dto.routeId) {
+    data.route_id = dto.routeId;
+  }
+
+  return this.prisma.customer.create({
+    data,
+  });
+}
+
+  findAll(agencyId?: number) {
+    return this.prisma.customer.findMany({
+      where: agencyId ? { agency_id: agencyId } : undefined,
+    });
+  }
+
+  assignRoute(customerId: number, routeId: number) {
+    return this.prisma.customer.update({
+      where: { id: customerId },
+      data: { route_id: routeId },
+    });
+  }
 }

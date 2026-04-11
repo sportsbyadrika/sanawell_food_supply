@@ -7,21 +7,31 @@ import { UpdateDeliveryStatusDto } from './dto/update-delivery-status.dto';
 export class DeliveryService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async generateDailyOrders(dto: CreateDeliveryDto) {
-    return this.prisma.$transaction(
-      dto.customerIds.map((customerId) =>
-        this.prisma.deliveryOrder.create({
-          data: { agencyId: dto.agencyId, routeId: dto.routeId, customerId, orderDate: new Date(dto.orderDate) },
-        }),
-      ),
-    );
-  }
+async generateDailyOrders(dto: CreateDeliveryDto) {
+  return this.prisma.$transaction(
+    dto.customer_ids.map((customer_id: number) =>
+      this.prisma.deliveryOrder.create({
+        data: {
+          route_id: dto.route_id,
+          customer_id: customer_id,
+          delivery_date: new Date(dto.delivery_date),
+          order_no: Math.floor(Math.random() * 100000), // required field
+        },
+      })
+    )
+  );
+}
 
   updateStatus(id: number, dto: UpdateDeliveryStatusDto) {
-    return this.prisma.deliveryOrder.update({ where: { id }, data: dto });
+    return this.prisma.deliveryOrder.update({
+      where: { id },
+      data: dto,
+    });
   }
 
-  findByDriver(driverId: number) {
-    return this.prisma.deliveryOrder.findMany({ where: { route: { driverId } }, include: { customer: true, items: true } });
-  }
+ findByDriver(driverId: number) {
+  return this.prisma.deliveryOrder.findMany({
+  
+  });
+}
 }

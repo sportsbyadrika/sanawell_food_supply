@@ -3,22 +3,22 @@ import { IsEmail, IsInt, IsOptional, IsString, MinLength } from 'class-validator
 export class CreateUserDto {
   @IsOptional()
   @IsInt()
-  agencyId?: number;
+  agency_id?: number;
 
   @IsInt()
-  roleId!: number;
+  role_id: number;
 
   @IsString()
-  name!: string;
+  name: string;
 
   @IsEmail()
-  email!: string;
+  email: string;
 
   @IsString()
   @MinLength(6)
-  password!: string;
+  password: string; // plain password (will hash later)
 
   @IsOptional()
   @IsString()
-  phone?: string;
+  mobile?: string;
 }
