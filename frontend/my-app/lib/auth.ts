@@ -1,20 +1,20 @@
-import { UserSession } from '@/types/auth';
+import api from '@/lib/api';
+import type { User } from '@/types';
 
-const USER_KEY = 'user';
-
-export function saveSession(token: string, user: UserSession) {
-  localStorage.setItem('accessToken', token);
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
-  document.cookie = `accessToken=${token}; path=/; SameSite=Lax`;
+export async function login(email: string, password: string) {
+  const response = await api.post('/auth/login', { email, password });
+  return response.data as { user: User; accessToken?: string };
 }
 
-export function getSession(): UserSession | null {
-  const raw = localStorage.getItem(USER_KEY);
-  return raw ? (JSON.parse(raw) as UserSession) : null;
+export async function getMe() {
+  const response = await api.get('/auth/me');
+  return response.data as User;
 }
 
-export function clearSession() {
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem(USER_KEY);
-  document.cookie = 'accessToken=; Max-Age=0; path=/';
+export async function logout() {
+  try {
+    await api.post('/auth/logout');
+  } catch {
+    // no-op: fallback to client redirect
+  }
 }
