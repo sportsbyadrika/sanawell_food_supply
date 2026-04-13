@@ -1,142 +1,77 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { login } from '@/lib/auth';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-  try {
-    const res = await fetch("http://localhost:4000/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-    const data = await res.json();
+    try {
+      const data = await login(email, password);
+      const role = data.user.role ?? (data.user.role_id === 6 ? 'AGENCY_ADMIN' : 'SUPER_ADMIN');
 
-    if (!res.ok) {
-      setError(data.message || "Login failed");
-      return;
+      if (role !== 'AGENCY_ADMIN') {
+        router.replace('/unauthorized');
+        return;
+      }
+
+      router.replace('/agency');
+    } catch (err: unknown) {
+      const message = err && typeof err === 'object' && 'message' in err ? String(err.message) : 'Login failed';
+      setError(message);
+    } finally {
+      setLoading(false);
     }
-
-    setError("");
-
-    console.log("LOGIN SUCCESS:", data);
-
-    // ✅ NEW: FIRST LOGIN CHECK
-    if (data.firstLogin) {
-      window.location.href = `/set-password?userId=${data.userId}`;
-      return;
-    }
-
-    // ✅ NORMAL LOGIN FLOW
-    localStorage.setItem("token", data.accessToken);
-    localStorage.setItem("user", JSON.stringify(data.user));
-
-    const role = data.user.role_id;
-
-    if (role === 5) {
-      window.location.href = "/super-admin";
-    } else if (role === 6) {
-      window.location.href = "/agency-admin";
-    } else if (role === 7) {
-      window.location.href = "/staff";
-    } else if (role === 8) {
-      window.location.href = "/driver";
-    }
-
-  } catch (err) {
-    console.error(err);
-    setError("Something went wrong");
-  }
-};
+  };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center bg-cover bg-center relative"
-      style={{
-        backgroundImage:
-          "url('https://images.unsplash.com/photo-1553413077-190dd305871c')",
-      }}
-    >
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/80 backdrop-blur-sm"></div>
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+      <form
+        onSubmit={handleLogin}
+        className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 shadow-2xl"
+      >
+        <h1 className="text-2xl font-semibold text-white">Agency Admin Login</h1>
+        <p className="mt-2 text-sm text-slate-300">Sign in to access your workspace.</p>
 
-      <div className="relative z-10 w-full max-w-6xl grid md:grid-cols-2 gap-10 px-6 items-center">
+        <div className="mt-6 space-y-4">
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            className="w-full rounded-xl border border-white/10 bg-slate-900/70 px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            className="w-full rounded-xl border border-white/10 bg-slate-900/70 px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
 
-        {/* LEFT SIDE */}
-        <div className="text-white hidden md:block">
-          <h1 className="text-5xl font-bold mb-6">
-            Dew Route{" "}
-            <span className="text-yellow-400">Product Delivery</span>
-          </h1>
+          {error && <p className="text-sm text-rose-400">{error}</p>}
 
-          <p className="text-lg text-gray-300 leading-relaxed max-w-lg">
-            A secure SaaS platform to manage agencies, deliveries, and rate cards —
-            all in one place. Track routes, optimize logistics, and deliver faster.
-          </p>
-
-          <p className="mt-10 text-sm text-gray-400">© 2026 Dew Route</p>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 py-3 font-medium text-white transition hover:opacity-90 disabled:opacity-60"
+          >
+            {loading ? 'Signing in...' : 'Login'}
+          </button>
         </div>
-
-        {/* RIGHT SIDE - LOGIN CARD */}
-        <div className="backdrop-blur-2xl bg-white/10 border border-white/20 shadow-[0_20px_60px_rgba(0,0,0,0.6)] rounded-2xl p-8 w-full max-w-md mx-auto">
-
-          <h2 className="text-2xl font-bold text-white text-center mb-2">
-            Welcome back 👋
-          </h2>
-
-          <p className="text-gray-300 text-center text-sm mb-6">
-            Sign in to continue
-          </p>
-
-          <div className="space-y-4">
-
-            {/* EMAIL */}
-            <input
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            />
-
-            {/* PASSWORD */}
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            />
-
-            {/* ERROR */}
-            {error && (
-              <p className="text-red-400 text-sm text-center">
-                {error}
-              </p>
-            )}
-
-            {/* BUTTON */}
-            <button
-              onClick={handleLogin}
-              className="w-full py-3 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-300 transition"
-            >
-              Login
-            </button>
-
-            <p className="text-gray-400 text-sm text-center">
-              Forgot password?
-            </p>
-
-          </div>
-        </div>
-      </div>
+      </form>
     </div>
   );
 }
