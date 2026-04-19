@@ -14,15 +14,23 @@ $title = $title ?? $config['app_name'];
       href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css"/>
 </head>
 <body class="bg-gray-100 text-gray-800">
-    <div class="min-h-screen flex flex-col">
-        <?php include __DIR__ . '/../partials/nav.php'; ?>
-        <main class="flex-1 container mx-auto px-4 py-6">
-            <?php include $viewPath; ?>
-        </main>
-        <footer class="bg-white border-t border-gray-200 py-4">
-            <div class="container mx-auto px-4 text-sm text-gray-500">&copy; <?= date('Y') ?> Dew Route Product Delivery</div>
-        </footer>
-    </div>
+  
+
+    <?php include __DIR__ . '/../partials/nav.php'; ?>
+
+    <!-- MAIN -->
+  <main class="container mx-auto px-4 py-6 min-h-[calc(100vh-140px)]">
+    <?php include $viewFile; ?>
+</main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-gray-200 py-4">
+        <div class="container mx-auto px-4 text-sm text-gray-500">
+            &copy; <?= date('Y') ?> Dew Route Product Delivery
+        </div>
+    </footer>
+
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 </body>
 </html>

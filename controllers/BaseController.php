@@ -11,16 +11,19 @@ class BaseController
 
    protected function render(string $view, array $data = [], ?string $layout = 'app'): void
    {
+   
+
     extract($data);
     if (!isset($this->config)) {
         $this->config = require __DIR__ . '/../config/config.php';
+          
     }
 
     $config = $this->config;
 
-    $viewPath = __DIR__ . '/../views/' . $view . '.php';
+    $viewFile = __DIR__ . '/../views/' . $view . '.php';
 
-    if (!file_exists($viewPath)) {
+    if (!file_exists($viewFile)) {
         http_response_code(404);
         echo 'View not found';
         return;
@@ -28,7 +31,8 @@ class BaseController
 
     
     if ($layout === null) {
-        include $viewPath;
+       
+        include $viewFile;
         return;
     }
 

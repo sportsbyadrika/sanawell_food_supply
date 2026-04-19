@@ -55,6 +55,7 @@ $showAgencyContext = in_array($role, ['agency_admin', 'office_staff'], true);
 <nav class="ml-auto flex items-center gap-6 text-sm font-medium text-white/90">
 
 <!-- DASHBOARD (ALL) -->
+ <div>
 <a href="index.php?route=dashboard" class="flex items-center gap-1 hover:text-white transition">
     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
         <path stroke-linecap="round" stroke-linejoin="round"
@@ -62,8 +63,9 @@ $showAgencyContext = in_array($role, ['agency_admin', 'office_staff'], true);
     </svg>
     Dashboard
 </a>
-
+</div>
 <!-- SUPER ADMIN -->
+ <div>
 <?php if ($role === 'super_admin'): ?>
 <a href="index.php?route=agencies" class="flex items-center gap-1 hover:text-white transition">
     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -74,7 +76,7 @@ $showAgencyContext = in_array($role, ['agency_admin', 'office_staff'], true);
 </a>
 <?php endif; ?>
 
-
+</div>
 <!-- AGENCY ADMIN + OFFICE STAFF -->
 <?php if (in_array($role, ['agency_admin','office_staff'])): ?>
 

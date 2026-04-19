@@ -4,15 +4,17 @@ class DashboardController extends BaseController
     public function index(): void
     {
         $user = Auth::user();
-        if (!$user) {
+       
+               if (!$user) {
             $this->redirect('index.php?route=login');
         }
-       
-      $roleId = (int) $user['role_id'];   
+       $config = $this->config ?? require __DIR__ . '/../config/config.php';
 
+      $roleId = (int) $user['role_id'];   
+     
 switch ($roleId) {                 
 
-    case $this->config['roles']['SUPER_ADMIN']['id']:
+     case $config['roles']['SUPER_ADMIN']['id']:
         $agencyModel = new Agency();
         $this->render('superadmin/dashboard', [
             'title'           => 'Super Admin Dashboard',
